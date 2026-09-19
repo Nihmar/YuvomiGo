@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:yuvomigo/features/auth/auth_controller.dart';
 
-/// Shell principale: AppBar + bottom NavigationBar con le 5 tab MVP.
+/// Shell principale: bottom NavigationBar con le 5 tab MVP.
 ///
 /// È il builder della [ShellRoute]: [child] è la tab attiva fornita da
-/// go_router. L'indice della tab attiva è tenuto nello state e aggiornato
-/// dalla NavigationBar (le tab sono l'unica navigazione interna).
+/// go_router (ogni route ha il proprio Scaffold + AppBar). L'indice della tab
+/// attiva è tenuto nello state e aggiornato dalla NavigationBar.
 final class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key, required this.child});
 
@@ -32,17 +31,7 @@ final class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('YuvomiGo'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Esci',
-            onPressed: () =>
-                ref.read(authControllerProvider.notifier).logout(),
-          ),
-        ],
-      ),
+      // Niente AppBar qui: ogni route (tab o detail) ha il proprio AppBar.
       body: widget.child,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,

@@ -14,7 +14,19 @@ final class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboard = ref.watch(dashboardProvider);
 
-    return RefreshIndicator(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Dashboard'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Esci',
+            onPressed: () =>
+                ref.read(authControllerProvider.notifier).logout(),
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
       onRefresh: () async {
         ref.invalidate(dashboardProvider);
         await ref.read(dashboardProvider.future);
@@ -36,6 +48,7 @@ final class DashboardScreen extends ConsumerWidget {
             data: (d) => _DashboardBody(data: d),
           ),
         ],
+        ),
       ),
     );
   }
