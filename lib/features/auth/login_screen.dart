@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yuvomigo/core/api/api_error.dart';
 import 'package:yuvomigo/features/auth/auth_controller.dart';
 import 'package:yuvomigo/features/auth/auth_state.dart';
+import 'package:yuvomigo/features/auth/server_settings.dart';
 import 'package:yuvomigo/core/utils/url_utils.dart';
 
 /// Schermata di login: URL server + username + password (e 2FA opzionale).
@@ -22,6 +23,20 @@ final class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   String? _error;
   bool _submitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _prefillServerUrl();
+  }
+
+  /// Precompila l'URL del server usato all'ultimo login.
+  Future<void> _prefillServerUrl() async {
+    final url = await ref.read(serverUrlMemoryProvider).read();
+    if (mounted && url != null && _urlController.text.isEmpty) {
+      _urlController.text = url;
+    }
+  }
 
   @override
   void dispose() {
@@ -44,6 +59,10 @@ final class _LoginScreenState extends ConsumerState<LoginScreen> {
             username: _usernameController.text.trim(),
             password: _passwordController.text,
           );
+      // Login ok (o 2FA): ricordiamo il server per la prossima volta.
+      await ref
+          .read(serverUrlMemoryProvider)
+          .remember(normalizeServerUrl(_urlController.text.trim()));
       // Su successo il router reindirizza automaticamente a home.
     } on ApiError catch (e) {
       if (mounted) {

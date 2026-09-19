@@ -4,8 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:yuvomigo/app.dart';
 import 'package:yuvomigo/data/generated/models/user.dart';
 import 'package:yuvomigo/features/auth/auth_controller.dart';
+import 'package:yuvomigo/features/auth/auth_providers.dart';
 import 'package:yuvomigo/features/auth/auth_state.dart';
 import 'package:yuvomigo/features/auth/login_screen.dart';
+import 'package:yuvomigo/features/auth/server_settings.dart';
+
+import 'utils/in_memory_storage.dart';
 
 User _fakeUser() => User(
       avatarColor: '#FF6B35',
@@ -129,5 +133,39 @@ void main() {
 
     expect(find.byType(LoginScreen), findsNothing);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
+  });
+
+  testWidgets('URL field is pre-filled from the last login', (tester) async {
+    final storage = InMemoryStorage();
+    storage.data['yuvomi.lastServerUrl'] = 'http://omvnas:4000';
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(
+            () => _FakeAuthController(const AuthUnauthenticated()),
+          ),
+          secureStorageProvider.overrideWithValue(storage),
+        ],
+        child: const YuvomiGoApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final field = find.byType(TextField).first;
+    expect(
+      (tester.widget<TextField>(field)).controller?.text,
+      'http://omvnas:4000',
+    );
+  });
+
+  group('ServerUrlMemory', () {
+    test('remember persists and read returns it', () async {
+      final storage = InMemoryStorage();
+      final memory = ServerUrlMemory(storage);
+      expect(await memory.read(), isNull);
+      await memory.remember('http://omvnas:4000');
+      expect(await memory.read(), 'http://omvnas:4000');
+    });
   });
 }
