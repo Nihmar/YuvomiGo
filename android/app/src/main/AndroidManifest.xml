@@ -1,8 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+      Le connessioni ai server Yuvomi domestici sono spesso in http:// (LAN).
+      Su Android API 28+ il cleartext è bloccato di default: lo abilitiamo
+      perché l'URL del server è scelto dall'utente (può essere http://).
+    -->
     <application
         android:label="yuvomigo"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"
