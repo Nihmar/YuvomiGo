@@ -2,61 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yuvomigo/app.dart';
-import 'package:yuvomigo/data/generated/models/user.dart';
 import 'package:yuvomigo/features/auth/auth_controller.dart';
 import 'package:yuvomigo/features/auth/auth_providers.dart';
 import 'package:yuvomigo/features/auth/auth_state.dart';
 import 'package:yuvomigo/features/auth/login_screen.dart';
 import 'package:yuvomigo/features/auth/server_settings.dart';
 
+import 'utils/fake_auth_controller.dart';
 import 'utils/in_memory_storage.dart';
-
-User _fakeUser() => User(
-      avatarColor: '#FF6B35',
-      displayName: 'Utente Test',
-      familyRole: 'parent',
-      id: 1,
-      role: 'admin',
-      username: 'test',
-    );
-
-/// AuthController fake: niente HTTP, login/2FA simulati.
-final class _FakeAuthController extends AuthController {
-  _FakeAuthController(this._initial);
-  final AuthState _initial;
-
-  bool loginCalled = false;
-  bool verifyCalled = false;
-  String? lastServerUrl;
-  String? lastUsername;
-  String? lastPassword;
-
-  @override
-  AuthState build() => _initial;
-
-  @override
-  Future<void> login({
-    required String serverUrl,
-    required String username,
-    required String password,
-  }) async {
-    loginCalled = true;
-    lastServerUrl = serverUrl;
-    lastUsername = username;
-    lastPassword = password;
-    state = Authenticated(user: _fakeUser());
-  }
-
-  @override
-  Future<void> verifyTwoFactor(String code) async {
-    verifyCalled = true;
-    state = Authenticated(user: _fakeUser());
-  }
-}
 
 Future<void> _pump(
   WidgetTester tester,
-  _FakeAuthController controller, {
+  FakeAuthController controller, {
   bool settle = true,
 }) async {
   await tester.pumpWidget(
@@ -83,7 +40,7 @@ void main() {
   ) async {
     await _pump(
       tester,
-      _FakeAuthController(const AuthUnauthenticated()),
+      FakeAuthController(const AuthUnauthenticated()),
     );
 
     expect(find.byType(LoginScreen), findsOneWidget);
@@ -96,7 +53,7 @@ void main() {
   testWidgets('Empty submit shows validation errors and does not login', (
     tester,
   ) async {
-    final controller = _FakeAuthController(const AuthUnauthenticated());
+    final controller = FakeAuthController(const AuthUnauthenticated());
     await _pump(tester, controller);
 
     await tester.tap(find.text('Accedi'));
@@ -109,7 +66,7 @@ void main() {
   });
 
   testWidgets('Valid submit logs in and navigates to home', (tester) async {
-    final controller = _FakeAuthController(const AuthUnauthenticated());
+    final controller = FakeAuthController(const AuthUnauthenticated());
     await _pump(tester, controller);
 
     // I campi sono EditableText (le label non sono i campi stessi).
@@ -129,7 +86,7 @@ void main() {
   });
 
   testWidgets('AuthLoading shows splash (not login)', (tester) async {
-    await _pump(tester, _FakeAuthController(const AuthLoading()), settle: false);
+    await _pump(tester, FakeAuthController(const AuthLoading()), settle: false);
 
     expect(find.byType(LoginScreen), findsNothing);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -143,7 +100,7 @@ void main() {
       ProviderScope(
         overrides: [
           authControllerProvider.overrideWith(
-            () => _FakeAuthController(const AuthUnauthenticated()),
+            () => FakeAuthController(const AuthUnauthenticated()),
           ),
           secureStorageProvider.overrideWithValue(storage),
         ],

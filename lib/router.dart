@@ -4,7 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:yuvomigo/features/auth/auth_controller.dart';
 import 'package:yuvomigo/features/auth/auth_state.dart';
 import 'package:yuvomigo/features/auth/login_screen.dart';
+import 'package:yuvomigo/features/calendar/calendar_screen.dart';
+import 'package:yuvomigo/features/dashboard/dashboard_screen.dart';
 import 'package:yuvomigo/features/home/home_screen.dart';
+import 'package:yuvomigo/features/notes/notes_screen.dart';
+import 'package:yuvomigo/features/shopping/shopping_screen.dart';
+import 'package:yuvomigo/features/tasks/tasks_screen.dart';
 
 final class _SplashScreen extends StatelessWidget {
   const _SplashScreen();
@@ -19,30 +24,56 @@ final class _SplashScreen extends StatelessWidget {
 
 final routerProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
-    initialLocation: '/',
+    initialLocation: '/dashboard',
     redirect: (context, state) {
       // Leggo lo stato auth al momento del redirect (non lo watcho):
       // il GoRouter resta lo stesso, e mi ri-navigo con ref.listen sotto.
       final authState = ref.read(authControllerProvider);
       final path = state.uri.path;
+      final onLoginOrSplash = path == '/login' || path == '/splash';
       switch (authState) {
         case AuthLoading():
           return path == '/splash' ? null : '/splash';
         case Authenticated():
-          // Se è autenticato, non mostrare il login.
-          return path == '/login' || path == '/splash' ? '/' : null;
+          // Se è autenticato: niente login/splash; al resto lascia stare.
+          return onLoginOrSplash ? '/dashboard' : null;
         case AuthUnauthenticated():
-          // Se non autenticato, mandare al login (tranne se già lì).
           return path == '/login' ? null : '/login';
         case AuthPending2FA():
-          // Il login è in corso (2FA): restare sul login.
           return path == '/login' ? null : '/login';
       }
     },
     routes: [
-      GoRoute(
-        path: '/',
-        builder: (context, state) => const HomeScreen(),
+      // Shell con bottom nav: le 5 tab MVP vivono sotto '/'.
+      ShellRoute(
+        builder: (context, state, child) => HomeScreen(child: child),
+        routes: [
+          GoRoute(
+            path: '/dashboard',
+            name: 'dashboard',
+            builder: (context, state) => const DashboardScreen(),
+          ),
+          GoRoute(
+            path: '/tasks',
+            name: 'tasks',
+            builder: (context, state) => const TasksScreen(),
+          ),
+          GoRoute(
+            path: '/shopping',
+            name: 'shopping',
+            builder: (context, state) => const ShoppingScreen(),
+          ),
+          GoRoute(
+            path: '/calendar',
+            name: 'calendar',
+            builder: (context, state) => const CalendarScreen(),
+          ),
+          GoRoute(
+            path: '/notes',
+            name: 'notes',
+            builder: (context, state) => const NotesScreen(),
+          ),
+        ],
       ),
       GoRoute(
         path: '/login',
@@ -56,9 +87,9 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 
   // Quando lo stato auth cambia, ri-navigo a '/' così il redirect
-  // viene riesaminato con lo stato nuovo (login → home, logout → login).
+  // viene riesaminato con lo stato nuovo (login → dashboard, logout → login).
   ref.listen(authControllerProvider, (_, next) {
-    router.go('/');
+    router.go('/dashboard');
   });
 
   ref.onDispose(router.dispose);

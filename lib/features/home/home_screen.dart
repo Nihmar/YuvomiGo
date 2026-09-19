@@ -1,17 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:yuvomigo/features/auth/auth_controller.dart';
-import 'package:yuvomigo/features/auth/auth_state.dart';
 
-/// Home (placeholder): in M1 diventa la dashboard con le tab dei moduli.
-final class HomeScreen extends ConsumerWidget {
-  const HomeScreen({super.key});
+/// Shell principale: AppBar + bottom NavigationBar con le 5 tab MVP.
+///
+/// È il builder della [ShellRoute]: [child] è la tab attiva fornita da
+/// go_router. L'indice della tab attiva è tenuto nello state e aggiornato
+/// dalla NavigationBar (le tab sono l'unica navigazione interna).
+final class HomeScreen extends ConsumerStatefulWidget {
+  const HomeScreen({super.key, required this.child});
+
+  final Widget child;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(authControllerProvider);
-    final user = state is Authenticated ? state.user : null;
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
 
+final class _HomeScreenState extends ConsumerState<HomeScreen> {
+  static const _tabs = [
+    _Tab('/dashboard', Icons.dashboard_outlined, Icons.dashboard, 'Dashboard'),
+    _Tab('/tasks', Icons.task_alt_outlined, Icons.task_alt, 'Task'),
+    _Tab('/shopping', Icons.shopping_cart_outlined, Icons.shopping_cart, 'Spesa'),
+    _Tab('/calendar',
+        Icons.calendar_month_outlined, Icons.calendar_month, 'Calendario'),
+    _Tab('/notes', Icons.sticky_note_2_outlined, Icons.sticky_note_2, 'Note'),
+  ];
+
+  int _index = 0;
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('YuvomiGo'),
@@ -19,33 +38,36 @@ final class HomeScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Esci',
-            onPressed: () => ref.read(authControllerProvider.notifier).logout(),
+            onPressed: () =>
+                ref.read(authControllerProvider.notifier).logout(),
           ),
         ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.person, size: 64),
-            const SizedBox(height: 16),
-            Text(
-              user?.displayName ?? 'Utente',
-              style: Theme.of(context).textTheme.headlineSmall,
+      body: widget.child,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (i) {
+          _index = i;
+          GoRouter.of(context).go(_tabs[i].path);
+        },
+        destinations: [
+          for (final t in _tabs)
+            NavigationDestination(
+              icon: Icon(t.icon),
+              selectedIcon: Icon(t.activeIcon),
+              label: t.label,
             ),
-            const SizedBox(height: 8),
-            Text(
-              user?.username ?? '',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Sessione attiva. La dashboard arriverà in M1.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
+}
+
+final class _Tab {
+  const _Tab(this.path, this.icon, this.activeIcon, this.label);
+
+  final String path;
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
 }
