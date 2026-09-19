@@ -1,0 +1,218 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:yuvomigo/core/api/api_error.dart';
+import 'package:yuvomigo/features/auth/auth_controller.dart';
+import 'package:yuvomigo/features/auth/auth_state.dart';
+import 'package:yuvomigo/core/utils/url_utils.dart';
+
+/// Schermata di login: URL server + username + password (e 2FA opzionale).
+final class LoginScreen extends ConsumerStatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+}
+
+final class _LoginScreenState extends ConsumerState<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _urlController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _codeController = TextEditingController();
+
+  String? _error;
+  bool _submitting = false;
+
+  @override
+  void dispose() {
+    _urlController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitCredentials() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() {
+      _error = null;
+      _submitting = true;
+    });
+    try {
+      await ref.read(authControllerProvider.notifier).login(
+            serverUrl: _urlController.text,
+            username: _usernameController.text.trim(),
+            password: _passwordController.text,
+          );
+      // Su successo il router reindirizza automaticamente a home.
+    } on ApiError catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.message;
+          _submitting = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _submit2FA() async {
+    if (_codeController.text.trim().isEmpty) return;
+    setState(() {
+      _error = null;
+      _submitting = true;
+    });
+    try {
+      await ref
+          .read(authControllerProvider.notifier)
+          .verifyTwoFactor(_codeController.text.trim());
+      // Su successo il router reindirizza a home.
+    } on ApiError catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.message;
+          _submitting = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(authControllerProvider);
+    final pending2FA = state is AuthPending2FA;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('YuvomiGo')),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 16),
+                  Text(
+                    'Accedi al tuo server Yuvomi',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 24),
+                  if (_error != null)
+                    _errorBox(context, _error!)
+                  else
+                    const SizedBox.shrink(),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _urlController,
+                    decoration: const InputDecoration(
+                      labelText: 'URL server',
+                      hintText: 'http://domini-o-nas:4000',
+                      prefixIcon: Icon(Icons.link),
+                    ),
+                    validator: validateServerUrl,
+                    textInputAction: TextInputAction.next,
+                  ),
+                  const SizedBox(height: 16),
+                  if (!pending2FA) ...[
+                    TextFormField(
+                      controller: _usernameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Username',
+                        prefixIcon: Icon(Icons.person),
+                      ),
+                      validator: (v) =>
+                          (v == null || v.trim().isEmpty) ? 'Inserisci l\'username.' : null,
+                      textInputAction: TextInputAction.next,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Password',
+                        prefixIcon: Icon(Icons.lock),
+                      ),
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? 'Inserisci la password.' : null,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) => _submitCredentials(),
+                    ),
+                    const SizedBox(height: 24),
+                    FilledButton.icon(
+                      onPressed: _submitting ? null : _submitCredentials,
+                      icon: _submitting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.login),
+                      label: const Text('Accedi'),
+                    ),
+                  ] else ...[
+                    Text(
+                      'Inserisci il codice del secondo fattore'
+                      '${state.recoveryAvailable ? ' (o un recovery code)' : ''}.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _codeController,
+                      decoration: const InputDecoration(
+                        labelText: 'Codice',
+                        prefixIcon: Icon(Icons.pin),
+                      ),
+                      keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) => _submit2FA(),
+                    ),
+                    const SizedBox(height: 24),
+                    FilledButton.icon(
+                      onPressed: _submitting ? null : _submit2FA,
+                      icon: _submitting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.verified),
+                      label: const Text('Verifica'),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _errorBox(BuildContext context, String message) {
+    return Material(
+      color: Theme.of(context).colorScheme.errorContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Icon(
+              Icons.error_outline,
+              color: Theme.of(context).colorScheme.onErrorContainer,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onErrorContainer,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
