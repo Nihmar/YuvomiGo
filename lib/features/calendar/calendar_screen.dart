@@ -1,16 +1,103 @@
 import 'package:flutter/material.dart';
-import 'package:yuvomigo/features/home/module_placeholder.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:yuvomigo/features/calendar/calendar_models.dart';
+import 'package:yuvomigo/features/calendar/calendar_providers.dart';
 
-/// Calendario (placeholder): implementato in M2.
-final class CalendarScreen extends StatelessWidget {
+/// Tab Calendario: eventi prossimi 7 giorni (read-only, MVP).
+final class CalendarScreen extends ConsumerWidget {
   const CalendarScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const ModulePlaceholder(
-      title: 'Calendario',
-      icon: Icons.calendar_month,
-      detail: 'Vista mese/settimana, eventi e creazione. In arrivo in M2.',
+  Widget build(BuildContext context, WidgetRef ref) {
+    final events = ref.watch(calendarEventsProvider);
+    final scheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Calendario')),
+      body: events.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Card(
+              color: scheme.errorContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Impossibile caricare il calendario.',
+                        style: TextStyle(
+                            color: scheme.onErrorContainer,
+                            fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Text(e.toString(),
+                        style: TextStyle(color: scheme.onErrorContainer)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        data: (events) {
+          if (events.isEmpty) {
+            return ListView(
+              padding: const EdgeInsets.all(24),
+              children: [
+                Text('Nessun evento nei prossimi 7 giorni.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium),
+              ],
+            );
+          }
+          final groups = _groupByDay(events);
+          return ListView(
+            padding: const EdgeInsets.all(12),
+            children: [
+              for (final entry in groups.entries) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    entry.key,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold),
+                  ),
+                ),
+                for (final event in entry.value)
+                  ListTile(
+                    leading: const Icon(Icons.event),
+                    title: Text(event.title),
+                    subtitle: Text(
+                      event.allDay
+                          ? ''
+                          : _timeOf(event.startDatetime),
+                    ),
+                  ),
+              ],
+            ],
+          );
+        },
+      ),
     );
   }
+}
+
+/// Raggruppa gli eventi per giorno (chiave 'YYYY-MM-DD').
+Map<String, List<CalendarEvent>> _groupByDay(List<CalendarEvent> events) {
+  final groups = <String, List<CalendarEvent>>{};
+  for (final e in events) {
+    final date = e.startDatetime.length >= 10
+        ? e.startDatetime.substring(0, 10)
+        : 's.d.';
+    groups.putIfAbsent(date, () => []).add(e);
+  }
+  return groups;
+}
+
+String _timeOf(String iso) {
+  final parsed = DateTime.tryParse(iso);
+  if (parsed == null) return '';
+  final h = parsed.hour.toString().padLeft(2, '0');
+  final m = parsed.minute.toString().padLeft(2, '0');
+  return '$h:$m';
 }

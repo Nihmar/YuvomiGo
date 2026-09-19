@@ -1,13 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:yuvomigo/core/api/yuvomi_api.dart';
+import 'package:yuvomigo/core/auth/session_manager.dart';
+import 'package:yuvomigo/data/repositories/calendar_repository.dart';
 import 'package:yuvomigo/features/auth/auth_controller.dart';
 import 'package:yuvomigo/features/auth/auth_state.dart';
+import 'package:yuvomigo/features/calendar/calendar_models.dart';
+import 'package:yuvomigo/features/calendar/calendar_providers.dart';
 import 'package:yuvomigo/features/dashboard/dashboard_models.dart';
 import 'package:yuvomigo/features/dashboard/dashboard_providers.dart';
 import 'package:yuvomigo/app.dart';
 
 import 'utils/fake_auth_controller.dart';
+import 'utils/in_memory_storage.dart';
+
+final class _FakeCalendarRepository extends CalendarRepository {
+  _FakeCalendarRepository()
+      : super(YuvomiApi(
+          baseUrl: 'http://fake.local',
+          sessions: SessionManager(InMemoryStorage()),
+        ));
+
+  @override
+  Future<List<CalendarEvent>> fetchRange(String from, String to) async => [
+        CalendarEvent(
+          id: 1,
+          title: 'Evento nav',
+          startDatetime: '2026-09-01T09:00:00',
+        ),
+      ];
+}
 
 final _sample = DashboardData(
   urgentTasks: [
@@ -51,6 +74,9 @@ void main() {
             () => FakeAuthController(Authenticated(user: fakeUser())),
           ),
           dashboardProvider.overrideWithValue(AsyncData(_sample)),
+          calendarRepositoryProvider.overrideWithValue(
+            _FakeCalendarRepository(),
+          ),
         ],
         child: const YuvomiGoApp(),
       ),
@@ -61,8 +87,8 @@ void main() {
     await tester.tap(find.text('Calendario'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Vista mese/settimana, eventi e creazione. In arrivo in M2.'),
-        findsOneWidget);
+    // Il tab Calendario è ora lo screen reale: mostra gli eventi.
+    expect(find.text('Evento nav'), findsOneWidget);
   });
 
   testWidgets('Dashboard tab is the initial location', (tester) async {
