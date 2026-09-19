@@ -54,6 +54,9 @@ final class YuvomiApi {
   /// Il client generato (per i moduli): usa lo stesso Dio con l'interceptor.
   gen.YuvomiApiClient get client => _client;
 
+  /// Il Dio sottostante (per endpoint non in spec, es. dashboard).
+  Dio get dio => _dio;
+
   /// Login con username/password. Gesti il 2FA opzionale.
   Future<LoginResult> login(String username, String password) async {
     _sessions.beginSession(baseUrl);
