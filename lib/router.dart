@@ -8,6 +8,7 @@ import 'package:yuvomigo/features/calendar/calendar_screen.dart';
 import 'package:yuvomigo/features/dashboard/dashboard_screen.dart';
 import 'package:yuvomigo/features/home/home_screen.dart';
 import 'package:yuvomigo/features/notes/notes_screen.dart';
+import 'package:yuvomigo/features/shopping/shopping_list_detail_screen.dart';
 import 'package:yuvomigo/features/shopping/shopping_screen.dart';
 import 'package:yuvomigo/features/tasks/tasks_screen.dart';
 
@@ -62,6 +63,16 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/shopping',
             name: 'shopping',
             builder: (context, state) => const ShoppingScreen(),
+            routes: [
+              GoRoute(
+                path: ':id',
+                name: 'shopping-detail',
+                builder: (context, state) {
+                  final id = int.parse(state.pathParameters['id']!);
+                  return ShoppingListDetailScreen(listId: id);
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: '/calendar',
