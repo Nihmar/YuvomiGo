@@ -7,6 +7,10 @@
 .buildlog/
 .history
 
+# IDE / editor
+.idea/
+*.iml
+
 
 
 # Flutter repo-specific
@@ -117,3 +121,6 @@ app.*.symbols
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
+# Spec preparata per il generatore (derivata da openapi.json via scripts/prep_spec.py)
+api/openapi.sanitized.json
+!pubspec.lock

@@ -1,0 +1,9 @@
+targets:
+  $default:
+    builders:
+      dart_openapi_generator:
+        options:
+          input_spec: "api/openapi.sanitized.json"
+          output_dir: "lib/data/generated"
+          client_name: "YuvomiApiClient"
+          date_time_converter: "iso8601"
