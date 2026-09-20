@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yuvomigo/core/api/api_error.dart';
 import 'package:yuvomigo/core/api/yuvomi_api.dart';
+import 'package:yuvomigo/core/auth/session_manager.dart';
 import 'package:yuvomigo/core/utils/url_utils.dart';
 import 'package:yuvomigo/features/auth/auth_providers.dart';
 import 'package:yuvomigo/features/auth/auth_state.dart';
@@ -22,6 +23,18 @@ class AuthController extends Notifier<AuthState> {
     return const AuthLoading();
   }
 
+  /// Pulizia best-effort dopo un fallimento: lo stato in memoria viene
+  /// sempre azzerato anche se lo storage persistente lancia.
+  Future<void> _resetAfterFailure(SessionManager sessions) async {
+    _api = null;
+    state = const AuthUnauthenticated();
+    try {
+      await sessions.clear();
+    } catch (_) {
+      // Storage non disponibile: la sessione in memoria è già azzerata.
+    }
+  }
+
   /// Verifica la sessione salvata all'avvio dell'app.
   Future<void> _bootstrap() async {
     final sessions = ref.read(sessionManagerProvider);
@@ -35,9 +48,11 @@ class AuthController extends Notifier<AuthState> {
       final user = await _api!.me();
       state = Authenticated(user: user);
     } on ApiError {
-      await sessions.clear();
-      _api = null;
-      state = const AuthUnauthenticated();
+      await _resetAfterFailure(sessions);
+    } catch (_) {
+      // Errori non-API (storage, parsing): niente splash infinito,
+      // si torna al login come con una sessione scaduta.
+      await _resetAfterFailure(sessions);
     }
   }
 
@@ -60,9 +75,12 @@ class AuthController extends Notifier<AuthState> {
         state = Authenticated(user: result.user);
       }
     } on ApiError {
-      await sessions.clear();
-      _api = null;
-      state = const AuthUnauthenticated();
+      await _resetAfterFailure(sessions);
+      rethrow;
+    } catch (_) {
+      // Errori non-API (storage, parsing risposta): lo stato non deve
+      // restare bloccato su AuthLoading, e lo screen deve mostrare qualcosa.
+      await _resetAfterFailure(sessions);
       rethrow;
     }
   }
@@ -80,9 +98,10 @@ class AuthController extends Notifier<AuthState> {
       final user = await api.verifyTwoFactor(code);
       state = Authenticated(user: user);
     } on ApiError {
-      await sessions.clear();
-      _api = null;
-      state = const AuthUnauthenticated();
+      await _resetAfterFailure(sessions);
+      rethrow;
+    } catch (_) {
+      await _resetAfterFailure(sessions);
       rethrow;
     }
   }

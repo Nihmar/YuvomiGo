@@ -99,7 +99,11 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   // Quando lo stato auth cambia, ri-navigo a '/' così il redirect
   // viene riesaminato con lo stato nuovo (login → dashboard, logout → login).
+  // Lo stato intermedio AuthLoading non naviga: il login resta sullo screen
+  // corrente (che mostra il suo spinner locale) invece di passare per /splash
+  // smontando il form e perdendo l'eventuale messaggio di errore.
   ref.listen(authControllerProvider, (_, next) {
+    if (next is AuthLoading) return;
     router.go('/dashboard');
   });
 

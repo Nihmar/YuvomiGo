@@ -32,9 +32,13 @@ final class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   /// Precompila l'URL del server usato all'ultimo login.
   Future<void> _prefillServerUrl() async {
-    final url = await ref.read(serverUrlMemoryProvider).read();
-    if (mounted && url != null && _urlController.text.isEmpty) {
-      _urlController.text = url;
+    try {
+      final url = await ref.read(serverUrlMemoryProvider).read();
+      if (mounted && url != null && _urlController.text.isEmpty) {
+        _urlController.text = url;
+      }
+    } catch (_) {
+      // Storage non disponibile: il campo resta vuoto, il login resta usabile.
     }
   }
 
@@ -64,10 +68,22 @@ final class _LoginScreenState extends ConsumerState<LoginScreen> {
           .read(serverUrlMemoryProvider)
           .remember(normalizeServerUrl(_urlController.text.trim()));
       // Su successo il router reindirizza automaticamente a home.
+      // Resetto comunque lo spinner: in caso di 2FA si resta su questo
+      // screen (form del codice) e il bottone deve restare premibile.
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
     } on ApiError catch (e) {
       if (mounted) {
         setState(() {
           _error = e.message;
+          _submitting = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Errore imprevisto: $e';
           _submitting = false;
         });
       }
@@ -85,10 +101,20 @@ final class _LoginScreenState extends ConsumerState<LoginScreen> {
           .read(authControllerProvider.notifier)
           .verifyTwoFactor(_codeController.text.trim());
       // Su successo il router reindirizza a home.
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
     } on ApiError catch (e) {
       if (mounted) {
         setState(() {
           _error = e.message;
+          _submitting = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Errore imprevisto: $e';
           _submitting = false;
         });
       }
