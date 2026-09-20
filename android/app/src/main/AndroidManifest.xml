@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Rete: senza questo permesso l'APK release non può raggiungere
+         alcun server (il login fallirebbe sempre su Android). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <!--
       Le connessioni ai server Yuvomi domestici sono spesso in http:// (LAN).
       Su Android API 28+ il cleartext è bloccato di default: lo abilitiamo
