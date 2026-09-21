@@ -80,6 +80,20 @@ void main() {
     expect(adapter.requests.first.data['content'], 'ciao');
   });
 
+  test('updateNote sends only the provided fields', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('PUT', '/api/v1/notes/9',
+        {'data': {'id': 9, 'content': 'x', 'title': 'T', 'pinned': 1}});
+    final repo = NoteRepository(apiWith(adapter));
+    final updated = await repo.updateNote(9, pinned: true);
+
+    // Il PUT sovrascrive le chiavi presenti: il toggle del pin non deve
+    // mandare title/content null (azzererebbero il titolo sul server).
+    expect(adapter.requests.first.data, {'pinned': 1});
+    expect(updated.pinned, isTrue);
+    expect(updated.title, 'T');
+  });
+
   test('deleteNote issues a DELETE on the id', () async {
     final adapter = _RoutingAdapter();
     adapter.addRoute('DELETE', '/api/v1/notes/3', {});

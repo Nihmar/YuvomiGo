@@ -11,6 +11,13 @@ final class TasksScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tasks = ref.watch(tasksProvider);
     final scheme = Theme.of(context).colorScheme;
+    ref.listen<Object?>(tasksActionErrorProvider, (_, err) {
+      if (err != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Operazione non riuscita: $err')),
+        );
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(title: const Text('Task')),

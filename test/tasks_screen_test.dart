@@ -64,6 +64,13 @@ final class FakeTaskRepository extends TaskRepository {
   Future<void> deleteTask(int id) async => tasks.removeWhere((t) => t.id == id);
 }
 
+/// Il server non raggiungibile: le azioni falliscono, la lista resta intatta.
+final class FailingTaskRepository extends FakeTaskRepository {
+  @override
+  Future<Task> setStatus(int id, TaskStatus status) =>
+      Future.error(Exception('offline'));
+}
+
 Widget _pump(Widget child, FakeTaskRepository repo) {
   return ProviderScope(
     overrides: [
@@ -87,7 +94,8 @@ void main() {
     expect(find.byType(Checkbox), findsNWidgets(2));
   });
 
-  testWidgets('Toggling a task marks it done', (tester) async {
+  testWidgets('Toggling a task to done removes it from the open list',
+      (tester) async {
     final repo = FakeTaskRepository();
     await tester.pumpWidget(_pump(const TasksScreen(), repo));
     await tester.pumpAndSettle();
@@ -96,6 +104,22 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repo.tasks.first.status, TaskStatus.done);
+    // La lista mostra le task aperte: quella completata esce di scena.
+    expect(find.text('Spesa'), findsNothing);
+    expect(find.text('Pagare bolletta'), findsOneWidget);
+  });
+
+  testWidgets('Failed toggle keeps the task and shows an error',
+      (tester) async {
+    final repo = FailingTaskRepository();
+    await tester.pumpWidget(_pump(const TasksScreen(), repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(Checkbox).first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Spesa'), findsOneWidget);
+    expect(find.textContaining('Operazione non riuscita'), findsOneWidget);
   });
 
   testWidgets('Creating a task adds it', (tester) async {

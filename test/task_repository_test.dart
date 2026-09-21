@@ -68,6 +68,14 @@ void main() {
     expect(tasks[2].id, 1); // senza data ultima
   });
 
+  test('fetchTasks tolerates a missing data payload', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('GET', '/api/v1/tasks', {'data': null});
+    final repo = TaskRepository(apiWith(adapter));
+
+    expect(await repo.fetchTasks(), isEmpty);
+  });
+
   test('createTask posts the payload', () async {
     final adapter = _RoutingAdapter();
     adapter.addRoute('POST', '/api/v1/tasks',
@@ -76,7 +84,8 @@ void main() {
     final created = await repo.createTask(title: 'compra');
 
     expect(created.id, 7);
-    expect(adapter.requests.first.data['title'], 'compra');
+    // Solo i campi valorizzati: niente null espliciti.
+    expect(adapter.requests.first.data, {'title': 'compra', 'priority': 'none'});
   });
 
   test('setStatus PATCHes the status wire value', () async {

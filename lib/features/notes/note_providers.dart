@@ -9,6 +9,21 @@ final noteRepositoryProvider = Provider<NoteRepository>((ref) {
   return NoteRepository(api);
 });
 
+/// Ultimo errore di un'azione (add/update/remove). La lista resta intatta:
+/// lo screen lo mostra come SnackBar. Null = nessuna azione fallita di recente.
+final notesActionErrorProvider =
+    NotifierProvider<NotesActionErrorNotifier, Object?>(
+  NotesActionErrorNotifier.new,
+);
+
+final class NotesActionErrorNotifier extends Notifier<Object?> {
+  @override
+  Object? build() => null;
+
+  void clear() => state = null;
+  void report(Object error) => state = error;
+}
+
 final notesProvider =
     NotifierProvider.autoDispose<NotesNotifier, AsyncValue<List<Note>>>(
   NotesNotifier.new,
@@ -42,6 +57,7 @@ final class NotesNotifier extends Notifier<AsyncValue<List<Note>>> {
     bool pinned = false,
   }) async {
     final repo = ref.read(noteRepositoryProvider);
+    ref.read(notesActionErrorProvider.notifier).clear();
     try {
       final created = await repo.createNote(
         content: content,
@@ -49,10 +65,10 @@ final class NotesNotifier extends Notifier<AsyncValue<List<Note>>> {
         color: color,
         pinned: pinned,
       );
-      final notes = (state.value ?? const <Note>[]).toSet()..add(created);
-      state = AsyncData(notes.toList());
-    } catch (e, st) {
-      state = AsyncError<List<Note>>(e, st);
+      final notes = [...state.value ?? const <Note>[], created];
+      state = AsyncData(notes);
+    } catch (e) {
+      ref.read(notesActionErrorProvider.notifier).report(e);
     }
   }
 
@@ -64,6 +80,7 @@ final class NotesNotifier extends Notifier<AsyncValue<List<Note>>> {
     bool? pinned,
   }) async {
     final repo = ref.read(noteRepositoryProvider);
+    ref.read(notesActionErrorProvider.notifier).clear();
     try {
       final updated = await repo.updateNote(
         id,
@@ -72,22 +89,22 @@ final class NotesNotifier extends Notifier<AsyncValue<List<Note>>> {
         color: color,
         pinned: pinned,
       );
-      final notes = state.value?.map((n) => n.id == id ? updated : n).toList();
-      state = AsyncData(notes ?? const <Note>[]);
-    } catch (e, st) {
-      state = AsyncError<List<Note>>(e, st);
+      final prev = state.value ?? const <Note>[];
+      state = AsyncData(prev.map((n) => n.id == id ? updated : n).toList());
+    } catch (e) {
+      ref.read(notesActionErrorProvider.notifier).report(e);
     }
   }
 
   Future<void> remove(int id) async {
+    final prev = state.value ?? const <Note>[];
     final repo = ref.read(noteRepositoryProvider);
+    ref.read(notesActionErrorProvider.notifier).clear();
     try {
       await repo.deleteNote(id);
-      final notes =
-          state.value?.where((n) => n.id != id).toList() ?? const <Note>[];
-      state = AsyncData(notes);
-    } catch (e, st) {
-      state = AsyncError<List<Note>>(e, st);
+      state = AsyncData(prev.where((n) => n.id != id).toList());
+    } catch (e) {
+      ref.read(notesActionErrorProvider.notifier).report(e);
     }
   }
 }

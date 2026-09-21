@@ -54,6 +54,10 @@ base class NoteRepository {
     return Note.fromJson(data as Map<String, dynamic>);
   }
 
+  /// Solo i campi valorizzati vengono inviati: il PUT interpreta una chiave
+  /// presente (anche null) come "sovrascrivi" — ad es. `title: null`
+  /// cancellerebbe il titolo (il toggle del pin manda solo `pinned`).
+  /// Per azzerare il titolo passare stringa vuota (il server la normalizza).
   Future<Note> updateNote(
     int id, {
     String? content,
@@ -64,10 +68,10 @@ base class NoteRepository {
     final res = await _api.dio.put<dynamic>(
       '/api/v1/notes/$id',
       data: {
-        'content': content,
-        'title': title,
-        'color': color,
-        'pinned': pinned ?? false,
+        'content': ?content,
+        'title': ?title,
+        'color': ?color,
+        if (pinned case final p?) 'pinned': p ? 1 : 0,
       },
     );
     final data = (res.data is Map)

@@ -11,6 +11,13 @@ final class NotesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final notes = ref.watch(notesProvider);
     final scheme = Theme.of(context).colorScheme;
+    ref.listen<Object?>(notesActionErrorProvider, (_, err) {
+      if (err != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Operazione non riuscita: $err')),
+        );
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(title: const Text('Note')),
@@ -225,7 +232,9 @@ final class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
   Future<void> _save(BuildContext context) async {
     final content = _content.text.trim();
     if (content.isEmpty) return;
-    final title = _title.text.trim().isEmpty ? null : _title.text.trim();
+    // Stringa vuota = "azzera il titolo" (il server la normalizza a null);
+    // null = "non toccare" (usato dal toggle del pin).
+    final title = _title.text.trim();
     // Capture navigator prima dell'await (il context non è valido dopo).
     final navigator = Navigator.of(context);
     setState(() => _busy = true);

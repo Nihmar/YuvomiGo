@@ -19,14 +19,13 @@ base class TaskRepository {
     final data = (res.data is Map)
         ? (res.data as Map<String, dynamic>)['data']
         : res.data;
-    final list = (data as List<dynamic>)
+    // `data` assente/non-lista (es. risposta inattesa con 200): lista vuota
+    // invece di un TypeError che oscura l'errore vero.
+    final raw = (data as List<dynamic>?) ?? const <dynamic>[];
+    final list = raw
         .map((e) => Task.fromJson(e as Map<String, dynamic>))
         .toList();
-    list.sort((a, b) {
-      final ad = a.dueDate ?? '9999-99-99';
-      final bd = b.dueDate ?? '9999-99-99';
-      return ad.compareTo(bd);
-    });
+    list.sort(compareTasksByDueDate);
     return list;
   }
 
@@ -38,11 +37,13 @@ base class TaskRepository {
   }) async {
     final res = await _api.dio.post<dynamic>(
       '/api/v1/tasks',
+      // Solo i campi valorizzati: i null espliciti non aggiungono nulla
+      // e alcuni endpoint li interpretano come "azzera".
       data: {
         'title': title,
         'priority': priority,
-        'due_date': dueDate,
-        'category': category,
+        'due_date': ?dueDate,
+        'category': ?category,
       },
     );
     final data = (res.data is Map)

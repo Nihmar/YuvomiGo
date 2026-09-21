@@ -15,6 +15,13 @@ extension TaskStatusX on TaskStatus {
       };
 }
 
+/// Ordinamento MVP: per due_date (null = ultime).
+int compareTasksByDueDate(Task a, Task b) {
+  final ad = a.dueDate ?? '9999-99-99';
+  final bd = b.dueDate ?? '9999-99-99';
+  return ad.compareTo(bd);
+}
+
 final class Task {
   const Task({
     required this.id,
