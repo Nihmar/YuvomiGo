@@ -12,6 +12,13 @@ final class ShoppingListDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final listId = this.listId;
     final items = ref.watch(shoppingItemsProvider(listId));
+    ref.listen<Object?>(shoppingActionErrorProvider, (_, err) {
+      if (err != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Operazione non riuscita: $err')),
+        );
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(title: const Text('Articoli')),
@@ -100,16 +107,32 @@ final class ShoppingListDetailScreen extends ConsumerWidget {
   }
 
   void _promptForItem(BuildContext context, WidgetRef ref) {
-    final controller = TextEditingController();
+    final nameController = TextEditingController();
+    final qtyController = TextEditingController();
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Nuovo articolo'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(labelText: 'Nome (e quantità)'),
-          onSubmitted: (value) => _submit(controller, dialogContext, ref),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              autofocus: true,
+              decoration: const InputDecoration(labelText: 'Nome'),
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: qtyController,
+              decoration: const InputDecoration(
+                labelText: 'Quantità (opzionale)',
+                hintText: 'es. 2, 500g, 1 confezione',
+              ),
+              onSubmitted: (_) =>
+                  _submit(nameController, qtyController, dialogContext, ref),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -117,7 +140,8 @@ final class ShoppingListDetailScreen extends ConsumerWidget {
             child: const Text('Annulla'),
           ),
           FilledButton(
-            onPressed: () => _submit(controller, dialogContext, ref),
+            onPressed: () =>
+                _submit(nameController, qtyController, dialogContext, ref),
             child: const Text('Aggiungi'),
           ),
         ],
@@ -126,13 +150,18 @@ final class ShoppingListDetailScreen extends ConsumerWidget {
   }
 
   void _submit(
-    TextEditingController controller,
+    TextEditingController nameController,
+    TextEditingController qtyController,
     BuildContext dialogContext,
     WidgetRef ref,
   ) {
-    final raw = controller.text.trim();
-    if (raw.isNotEmpty) {
-      ref.read(shoppingItemsProvider(listId).notifier).add(raw);
+    final name = nameController.text.trim();
+    final quantity = qtyController.text.trim();
+    if (name.isNotEmpty) {
+      ref.read(shoppingItemsProvider(listId).notifier).add(
+            name,
+            quantity: quantity.isEmpty ? null : quantity,
+          );
     }
     Navigator.of(dialogContext).pop();
   }

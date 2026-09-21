@@ -9,6 +9,24 @@ final shoppingRepositoryProvider = Provider<ShoppingRepository>((ref) {
   return ShoppingRepository(api);
 });
 
+/// Ultimo errore di un'azione sulle liste/articoli. Lo stato resta intatto:
+/// gli screen lo mostrano come SnackBar. Null = nessuna azione fallita.
+final shoppingActionErrorProvider =
+    NotifierProvider<ShoppingActionErrorNotifier, Object?>(
+  ShoppingActionErrorNotifier.new,
+);
+
+final class ShoppingActionErrorNotifier extends Notifier<Object?> {
+  @override
+  Object? build() => null;
+
+  void clear() => state = null;
+  void report(Object error) => state = error;
+}
+
+ShoppingActionErrorNotifier _errors(Ref ref) =>
+    ref.read(shoppingActionErrorProvider.notifier);
+
 /// Le liste di spesa (con conteggi) + azioni.
 class ShoppingListsNotifier extends Notifier<AsyncValue<List<ShoppingList>>> {
   bool _loading = false;
@@ -35,23 +53,38 @@ class ShoppingListsNotifier extends Notifier<AsyncValue<List<ShoppingList>>> {
 
   Future<void> add(String name) async {
     final repo = ref.read(shoppingRepositoryProvider);
-    final created = await repo.createList(name);
-    final prev = state.value ?? const <ShoppingList>[];
-    state = AsyncData([...prev, created]);
+    _errors(ref).clear();
+    try {
+      final created = await repo.createList(name);
+      final prev = state.value ?? const <ShoppingList>[];
+      state = AsyncData([...prev, created]);
+    } catch (e) {
+      _errors(ref).report(e);
+    }
   }
 
   Future<void> rename(int id, String name) async {
     final repo = ref.read(shoppingRepositoryProvider);
-    final updated = await repo.renameList(id, name);
-    final prev = state.value ?? const <ShoppingList>[];
-    state = AsyncData(prev.map((l) => l.id == id ? updated : l).toList());
+    _errors(ref).clear();
+    try {
+      final updated = await repo.renameList(id, name);
+      final prev = state.value ?? const <ShoppingList>[];
+      state = AsyncData(prev.map((l) => l.id == id ? updated : l).toList());
+    } catch (e) {
+      _errors(ref).report(e);
+    }
   }
 
   Future<void> remove(int id) async {
-    final repo = ref.read(shoppingRepositoryProvider);
-    await repo.deleteList(id);
     final prev = state.value ?? const <ShoppingList>[];
-    state = AsyncData(prev.where((l) => l.id != id).toList());
+    final repo = ref.read(shoppingRepositoryProvider);
+    _errors(ref).clear();
+    try {
+      await repo.deleteList(id);
+      state = AsyncData(prev.where((l) => l.id != id).toList());
+    } catch (e) {
+      _errors(ref).report(e);
+    }
   }
 }
 
@@ -87,23 +120,38 @@ class ShoppingItemsNotifier extends Notifier<AsyncValue<List<ShoppingItem>>> {
 
   Future<void> add(String name, {String? quantity}) async {
     final repo = ref.read(shoppingRepositoryProvider);
-    final created = await repo.addItem(listId, name: name, quantity: quantity);
-    final prev = state.value ?? const <ShoppingItem>[];
-    state = AsyncData([...prev, created]);
+    _errors(ref).clear();
+    try {
+      final created = await repo.addItem(listId, name: name, quantity: quantity);
+      final prev = state.value ?? const <ShoppingItem>[];
+      state = AsyncData([...prev, created]);
+    } catch (e) {
+      _errors(ref).report(e);
+    }
   }
 
   Future<void> toggle(int itemId, bool isChecked) async {
     final repo = ref.read(shoppingRepositoryProvider);
-    final updated = await repo.toggleItem(itemId, isChecked);
-    final prev = state.value ?? const <ShoppingItem>[];
-    state = AsyncData(prev.map((i) => i.id == itemId ? updated : i).toList());
+    _errors(ref).clear();
+    try {
+      final updated = await repo.toggleItem(itemId, isChecked);
+      final prev = state.value ?? const <ShoppingItem>[];
+      state = AsyncData(prev.map((i) => i.id == itemId ? updated : i).toList());
+    } catch (e) {
+      _errors(ref).report(e);
+    }
   }
 
   Future<void> remove(int itemId) async {
-    final repo = ref.read(shoppingRepositoryProvider);
-    await repo.deleteItem(itemId);
     final prev = state.value ?? const <ShoppingItem>[];
-    state = AsyncData(prev.where((i) => i.id != itemId).toList());
+    final repo = ref.read(shoppingRepositoryProvider);
+    _errors(ref).clear();
+    try {
+      await repo.deleteItem(itemId);
+      state = AsyncData(prev.where((i) => i.id != itemId).toList());
+    } catch (e) {
+      _errors(ref).report(e);
+    }
   }
 }
 

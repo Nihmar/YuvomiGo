@@ -15,6 +15,13 @@ final class _ShoppingScreenState extends ConsumerState<ShoppingScreen> {
   @override
   Widget build(BuildContext context) {
     final lists = ref.watch(shoppingListsProvider);
+    ref.listen<Object?>(shoppingActionErrorProvider, (_, err) {
+      if (err != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Operazione non riuscita: $err')),
+        );
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(title: const Text('Spesa')),
@@ -50,7 +57,34 @@ final class _ShoppingScreenState extends ConsumerState<ShoppingScreen> {
                 title: Text(list.name),
                 subtitle: Text(
                     '${list.openCount} aperti · ${list.itemChecked}/${list.itemTotal} spuntati'),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: PopupMenuButton<String>(
+                  tooltip: 'Azioni lista',
+                  onSelected: (value) {
+                    if (value == 'rename') {
+                      _promptForRename(context, list.id, list.name);
+                    } else if (value == 'delete') {
+                      _confirmDelete(context, list.id, list.name);
+                    }
+                  },
+                  itemBuilder: (menuContext) => const [
+                    PopupMenuItem(
+                      value: 'rename',
+                      child: ListTile(
+                        leading: Icon(Icons.edit_outlined),
+                        title: Text('Rinomina'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: ListTile(
+                        leading: Icon(Icons.delete_outline),
+                        title: Text('Elimina'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ],
+                ),
                 onTap: () => context.push('/shopping/${list.id}'),
               );
             },
@@ -98,6 +132,67 @@ final class _ShoppingScreenState extends ConsumerState<ShoppingScreen> {
       ref.read(shoppingListsProvider.notifier).add(name);
     }
     Navigator.of(dialogContext).pop();
+  }
+
+  void _promptForRename(BuildContext context, int listId, String current) {
+    final controller = TextEditingController(text: current);
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Rinomina lista'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Nome'),
+          onSubmitted: (_) {
+            final name = controller.text.trim();
+            if (name.isNotEmpty) {
+              ref.read(shoppingListsProvider.notifier).rename(listId, name);
+            }
+            Navigator.of(dialogContext).pop();
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                ref.read(shoppingListsProvider.notifier).rename(listId, name);
+              }
+              Navigator.of(dialogContext).pop();
+            },
+            child: const Text('Salva'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, int listId, String name) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Elimina lista'),
+        content: Text('Vuoi eliminare la lista "$name" e i suoi articoli?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () {
+              ref.read(shoppingListsProvider.notifier).remove(listId);
+              Navigator.of(dialogContext).pop();
+            },
+            child: const Text('Elimina'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

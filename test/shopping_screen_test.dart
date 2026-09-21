@@ -57,7 +57,7 @@ final class FakeShoppingRepository extends ShoppingRepository {
 
   @override
   Future<List<ShoppingItem>> fetchItems(int listId) async =>
-      itemsByList[listId] ?? const <ShoppingItem>[];
+      (itemsByList[listId] ?? const <ShoppingItem>[]).toList();
 
   @override
   Future<ShoppingItem> addItem(int listId,
@@ -87,6 +87,13 @@ final class FakeShoppingRepository extends ShoppingRepository {
       items.removeWhere((i) => i.id == itemId);
     }
   }
+}
+
+/// Il server non raggiungibile: le azioni falliscono, lo stato resta intatto.
+final class FailingShoppingRepository extends FakeShoppingRepository {
+  @override
+  Future<ShoppingItem> toggleItem(int itemId, bool isChecked) =>
+      Future.error(Exception('offline'));
 }
 
 Widget _pump(Widget child, FakeShoppingRepository repo) {
@@ -166,7 +173,7 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.add));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'Uova');
+    await tester.enterText(find.byType(TextField).first, 'Uova');
     await tester.tap(find.text('Aggiungi'));
     await tester.pumpAndSettle();
 
@@ -177,5 +184,72 @@ void main() {
       repo.itemsByList[1]!.where((i) => i.name == 'Uova'),
       hasLength(1),
     );
+  });
+
+  testWidgets('Adding an item with quantity sends it to the server',
+      (tester) async {
+    final repo = FakeShoppingRepository();
+    await tester.pumpWidget(_pump(
+        const ShoppingListDetailScreen(listId: 1), repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'Uova');
+    await tester.enterText(find.byType(TextField).at(1), '6');
+    await tester.tap(find.text('Aggiungi'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Uova (6)'), findsOneWidget);
+    final created =
+        repo.itemsByList[1]!.firstWhere((i) => i.name == 'Uova');
+    expect(created.quantity, '6');
+  });
+
+  testWidgets('Failed toggle keeps the item and shows an error',
+      (tester) async {
+    final repo = FailingShoppingRepository();
+    await tester.pumpWidget(_pump(
+        const ShoppingListDetailScreen(listId: 1), repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(Checkbox).first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Latte (2)'), findsOneWidget);
+    expect(find.textContaining('Operazione non riuscita'), findsOneWidget);
+  });
+
+  testWidgets('Renaming a list updates it', (tester) async {
+    final repo = FakeShoppingRepository();
+    await tester.pumpWidget(_pump(const ShoppingScreen(), repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(PopupMenuButton<String>).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Rinomina'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Supermercato');
+    await tester.tap(find.text('Salva'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Supermercato'), findsOneWidget);
+    expect(repo.lists.map((l) => l.name), contains('Supermercato'));
+  });
+
+  testWidgets('Deleting a list removes it', (tester) async {
+    final repo = FakeShoppingRepository();
+    await tester.pumpWidget(_pump(const ShoppingScreen(), repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(PopupMenuButton<String>).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Elimina'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Elimina'));
+    await tester.pumpAndSettle();
+
+    expect(repo.lists, hasLength(1));
+    expect(find.text('Super'), findsNothing);
   });
 }
