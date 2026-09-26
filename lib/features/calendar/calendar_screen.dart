@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yuvomigo/core/widgets/error_retry_tile.dart';
 import 'package:yuvomigo/features/calendar/calendar_models.dart';
 import 'package:yuvomigo/features/calendar/calendar_providers.dart';
+import 'package:yuvomigo/features/settings/settings_button.dart';
 
 /// Tab Calendario: eventi prossimi 7 giorni (read-only, MVP).
 final class CalendarScreen extends ConsumerWidget {
@@ -22,7 +23,10 @@ final class CalendarScreen extends ConsumerWidget {
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Calendario')),
+      appBar: AppBar(
+        title: const Text('Calendario'),
+        actions: const [SettingsButton()],
+      ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(calendarEventsProvider.notifier).refresh(),
         child: events.when(

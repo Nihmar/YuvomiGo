@@ -2,6 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yuvomigo/features/theme/theme_controller.dart';
 
+/// Apre il dialogo di scelta del colore tema.
+Future<void> showThemePicker(BuildContext context) {
+  return showDialog<void>(
+    context: context,
+    builder: (_) => const _ThemePickerDialog(),
+  );
+}
+
 /// Bottone palette che apre il dialogo di scelta del colore tema.
 final class ThemePickerButton extends ConsumerWidget {
   const ThemePickerButton({super.key});
@@ -11,10 +19,7 @@ final class ThemePickerButton extends ConsumerWidget {
     return IconButton(
       icon: const Icon(Icons.palette_outlined),
       tooltip: 'Cambia tema',
-      onPressed: () => showDialog<void>(
-        context: context,
-        builder: (_) => const _ThemePickerDialog(),
-      ),
+      onPressed: () => showThemePicker(context),
     );
   }
 }

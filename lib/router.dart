@@ -10,6 +10,7 @@ import 'package:yuvomigo/features/home/home_screen.dart';
 import 'package:yuvomigo/features/notes/notes_screen.dart';
 import 'package:yuvomigo/features/shopping/shopping_list_detail_screen.dart';
 import 'package:yuvomigo/features/shopping/shopping_screen.dart';
+import 'package:yuvomigo/features/settings/settings_screen.dart';
 import 'package:yuvomigo/features/tasks/tasks_screen.dart';
 
 final class _SplashScreen extends StatelessWidget {
@@ -86,6 +87,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        builder: (context, state) => const SettingsScreen(),
+      ),
       GoRoute(
         path: '/splash',
         builder: (context, state) => const _SplashScreen(),

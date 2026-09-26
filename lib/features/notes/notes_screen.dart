@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yuvomigo/core/widgets/error_retry_tile.dart';
 import 'package:yuvomigo/features/notes/note_models.dart';
 import 'package:yuvomigo/features/notes/note_providers.dart';
+import 'package:yuvomigo/features/settings/settings_button.dart';
 
 /// Tab Note: elenco note + creazione/modifica.
 final class NotesScreen extends ConsumerWidget {
@@ -22,7 +23,10 @@ final class NotesScreen extends ConsumerWidget {
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Note')),
+      appBar: AppBar(
+        title: const Text('Note'),
+        actions: const [SettingsButton()],
+      ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(notesProvider.notifier).refresh(),
         child: notes.when(

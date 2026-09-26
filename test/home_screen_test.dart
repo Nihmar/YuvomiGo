@@ -158,4 +158,25 @@ void main() {
     final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
     expect(navBar.selectedIndex, 2);
   });
+
+  testWidgets('The settings button opens the settings screen', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(
+            () => FakeAuthController(Authenticated(user: fakeUser())),
+          ),
+          dashboardProvider.overrideWithValue(AsyncData(_sample)),
+        ],
+        child: const YuvomiGoApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Impostazioni'), findsOneWidget);
+    expect(find.text('Utente Test'), findsOneWidget);
+  });
 }

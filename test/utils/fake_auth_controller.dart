@@ -51,4 +51,12 @@ class FakeAuthController extends AuthController {
     cancelTwoFactorCalled = true;
     state = const AuthUnauthenticated();
   }
+
+  bool logoutCalled = false;
+
+  @override
+  Future<void> logout() async {
+    logoutCalled = true;
+    state = const AuthUnauthenticated();
+  }
 }

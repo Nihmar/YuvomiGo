@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yuvomigo/core/widgets/error_retry_tile.dart';
 import 'package:yuvomigo/features/tasks/task_models.dart';
 import 'package:yuvomigo/features/tasks/task_providers.dart';
+import 'package:yuvomigo/features/settings/settings_button.dart';
 
 /// Tab Task: task aperte + creazione/complete/delete.
 final class TasksScreen extends ConsumerWidget {
@@ -22,7 +23,10 @@ final class TasksScreen extends ConsumerWidget {
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Task')),
+      appBar: AppBar(
+        title: const Text('Task'),
+        actions: const [SettingsButton()],
+      ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(tasksProvider.notifier).refresh(),
         child: tasks.when(

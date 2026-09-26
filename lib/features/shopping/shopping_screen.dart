@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:yuvomigo/core/widgets/error_retry_tile.dart';
 import 'package:yuvomigo/features/shopping/shopping_providers.dart';
+import 'package:yuvomigo/features/settings/settings_button.dart';
 
 /// Tab Spesa: le liste di spesa + creazione.
 final class ShoppingScreen extends ConsumerStatefulWidget {
@@ -27,7 +28,10 @@ final class _ShoppingScreenState extends ConsumerState<ShoppingScreen> {
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Spesa')),
+      appBar: AppBar(
+        title: const Text('Spesa'),
+        actions: const [SettingsButton()],
+      ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(shoppingListsProvider.notifier).refresh(),
         child: lists.when(

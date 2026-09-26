@@ -6,6 +6,7 @@ import 'package:yuvomigo/features/auth/auth_controller.dart';
 import 'package:yuvomigo/features/auth/auth_state.dart';
 import 'package:yuvomigo/features/dashboard/dashboard_models.dart';
 import 'package:yuvomigo/features/dashboard/dashboard_providers.dart';
+import 'package:yuvomigo/features/settings/settings_button.dart';
 import 'package:yuvomigo/features/theme/theme_picker_button.dart';
 
 /// Dashboard: tile aggregati dei moduli MVP (task, eventi, spesa, note).
@@ -19,14 +20,7 @@ final class DashboardScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
-        actions: [
-          const ThemePickerButton(),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Esci',
-            onPressed: () => ref.read(authControllerProvider.notifier).logout(),
-          ),
-        ],
+        actions: [const ThemePickerButton(), const SettingsButton()],
       ),
       body: RefreshIndicator(
         onRefresh: () async {
