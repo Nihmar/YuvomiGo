@@ -18,6 +18,7 @@ final class ModulesButton extends StatelessWidget {
       icon: Icons.account_balance_wallet_outlined,
       label: 'Budget',
     ),
+    (path: '/recipes', icon: Icons.menu_book_outlined, label: 'Ricette'),
   ];
 
   @override
