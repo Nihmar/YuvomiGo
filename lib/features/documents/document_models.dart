@@ -51,6 +51,23 @@ final class DocumentItem {
 }
 
 /// Etichette italiane delle categorie documento del server.
+const List<String> documentCategories = [
+  'medical',
+  'school',
+  'identity',
+  'insurance',
+  'finance',
+  'home',
+  'vehicle',
+  'legal',
+  'travel',
+  'pets',
+  'warranty',
+  'taxes',
+  'work',
+  'other',
+];
+
 String documentCategoryLabel(String category) => switch (category) {
   'medical' => 'Salute',
   'school' => 'Scuola',
@@ -77,4 +94,27 @@ String formatFileSize(int? bytes) {
     return '${(bytes / 1024).toStringAsFixed(0)} KB';
   }
   return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+}
+
+/// MIME ammessi dal server, per estensione.
+const Map<String, String> _mimeByExtension = {
+  'pdf': 'application/pdf',
+  'png': 'image/png',
+  'jpg': 'image/jpeg',
+  'jpeg': 'image/jpeg',
+  'webp': 'image/webp',
+  'txt': 'text/plain',
+  'csv': 'text/csv',
+  'doc': 'application/msword',
+  'docx':
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'xls': 'application/vnd.ms-excel',
+  'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+};
+
+/// MIME dedotto dall'estensione; null se il tipo non è ammesso.
+String? documentMimeForName(String name) {
+  final dot = name.lastIndexOf('.');
+  if (dot < 0 || dot == name.length - 1) return null;
+  return _mimeByExtension[name.substring(dot + 1).toLowerCase()];
 }

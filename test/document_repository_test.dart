@@ -97,4 +97,54 @@ void main() {
     expect(formatFileSize(2048), '2 KB');
     expect(formatFileSize(2 * 1024 * 1024), '2.0 MB');
   });
+
+  test('documentMimeForName maps allowed extensions only', () {
+    expect(documentMimeForName('polizza.pdf'), 'application/pdf');
+    expect(documentMimeForName('foto.JPG'), 'image/jpeg');
+    expect(documentMimeForName('foglio.xlsx'), contains('spreadsheetml'));
+    expect(documentMimeForName('virus.exe'), isNull);
+    expect(documentMimeForName('senzaestensione'), isNull);
+  });
+
+  test('uploadDocument posts a base64 data URL with the metadata', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('POST', '/api/v1/documents', {
+      'data': {
+        'id': 9,
+        'name': 'Polizza',
+        'original_name': 'polizza.pdf',
+        'mime_type': 'application/pdf',
+        'file_size': 3,
+      },
+    });
+    final repo = DocumentRepository(apiWith(adapter));
+    final uploaded = await repo.uploadDocument(
+      name: 'Polizza',
+      originalName: 'polizza.pdf',
+      mimeType: 'application/pdf',
+      bytes: Uint8List.fromList([1, 2, 3]),
+      category: 'insurance',
+    );
+
+    expect(uploaded.id, 9);
+    expect(adapter.requests.first.data, {
+      'name': 'Polizza',
+      'original_name': 'polizza.pdf',
+      'category': 'insurance',
+      'content_data': 'data:application/pdf;base64,AQID',
+    });
+  });
+
+  test('archiveDocument PATCHes the archive endpoint', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('PATCH', '/api/v1/documents/9/archive', {
+      'data': {'id': 9, 'status': 'archived'},
+    });
+    final repo = DocumentRepository(apiWith(adapter));
+    await repo.archiveDocument(9);
+
+    expect(adapter.requests.first.method, 'PATCH');
+    expect(adapter.requests.first.path, '/api/v1/documents/9/archive');
+    expect(adapter.requests.first.data, {'archived': true});
+  });
 }
