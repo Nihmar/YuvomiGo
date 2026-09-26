@@ -12,6 +12,18 @@ final class ShoppingListDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final listId = this.listId;
     final items = ref.watch(shoppingItemsProvider(listId));
+    // Nome della lista (arriva dalla tab sotto, già caricata): senza rileggere
+    // dal server il dettaglio può intitolarsi come la lista.
+    final listName = ref.watch(
+      shoppingListsProvider.select((value) {
+        final lists = value.value;
+        if (lists == null) return null;
+        for (final list in lists) {
+          if (list.id == listId) return list.name;
+        }
+        return null;
+      }),
+    );
     ref.listen<Object?>(shoppingActionErrorProvider, (_, err) {
       if (err != null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -21,7 +33,7 @@ final class ShoppingListDetailScreen extends ConsumerWidget {
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Articoli')),
+      appBar: AppBar(title: Text(listName ?? 'Articoli')),
       body: items.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ListView(

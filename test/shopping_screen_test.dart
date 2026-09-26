@@ -119,6 +119,23 @@ Widget _pump(Widget child, FakeShoppingRepository repo) {
   );
 }
 
+/// Sonda che espone i conteggi delle liste mentre è aperto il dettaglio:
+/// serve a verificare che la summary resti coerente con gli articoli.
+final class _ListsProbe extends ConsumerWidget {
+  const _ListsProbe();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lists = ref.watch(shoppingListsProvider);
+    final text =
+        lists.value
+            ?.map((l) => '${l.name}:${l.itemChecked}/${l.itemTotal}')
+            .join(',') ??
+        'loading';
+    return Text(text);
+  }
+}
+
 void main() {
   testWidgets('Lists screen renders the shopping lists', (tester) async {
     final repo = FakeShoppingRepository();
@@ -263,5 +280,92 @@ void main() {
 
     expect(repo.lists, hasLength(1));
     expect(find.text('Super'), findsNothing);
+  });
+
+  testWidgets('Detail screen shows the list name', (tester) async {
+    final repo = FakeShoppingRepository();
+    await tester.pumpWidget(
+      _pump(
+        const Column(
+          children: [
+            Expanded(child: ShoppingListDetailScreen(listId: 1)),
+            _ListsProbe(),
+          ],
+        ),
+        repo,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Super'), findsOneWidget);
+  });
+
+  testWidgets('Toggling an item keeps the list counts in sync', (tester) async {
+    final repo = FakeShoppingRepository();
+    await tester.pumpWidget(
+      _pump(
+        const Column(
+          children: [
+            Expanded(child: ShoppingListDetailScreen(listId: 1)),
+            _ListsProbe(),
+          ],
+        ),
+        repo,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Super:2/5'), findsOneWidget);
+
+    await tester.tap(find.byType(Checkbox).first);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Super:3/5'), findsOneWidget);
+  });
+
+  testWidgets('Adding an item keeps the list counts in sync', (tester) async {
+    final repo = FakeShoppingRepository();
+    await tester.pumpWidget(
+      _pump(
+        const Column(
+          children: [
+            Expanded(child: ShoppingListDetailScreen(listId: 1)),
+            _ListsProbe(),
+          ],
+        ),
+        repo,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'Uova');
+    await tester.tap(find.text('Aggiungi'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Super:2/6'), findsOneWidget);
+  });
+
+  testWidgets('Deleting an item keeps the list counts in sync', (tester) async {
+    final repo = FakeShoppingRepository();
+    await tester.pumpWidget(
+      _pump(
+        const Column(
+          children: [
+            Expanded(child: ShoppingListDetailScreen(listId: 1)),
+            _ListsProbe(),
+          ],
+        ),
+        repo,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Il secondo articolo (Pane) è già spuntato: 5 → 4 totali, 2 → 1 spuntati.
+    await tester.tap(find.byIcon(Icons.delete_outline).at(1));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Super:1/4'), findsOneWidget);
   });
 }

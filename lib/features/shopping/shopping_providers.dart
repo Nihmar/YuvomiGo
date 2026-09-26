@@ -27,6 +27,8 @@ final class ShoppingActionErrorNotifier extends Notifier<Object?> {
 ShoppingActionErrorNotifier _errors(Ref ref) =>
     ref.read(shoppingActionErrorProvider.notifier);
 
+int _atLeastZero(int value) => value < 0 ? 0 : value;
+
 /// Le liste di spesa (con conteggi) + azioni.
 class ShoppingListsNotifier extends Notifier<AsyncValue<List<ShoppingList>>> {
   bool _loading = false;
@@ -86,6 +88,23 @@ class ShoppingListsNotifier extends Notifier<AsyncValue<List<ShoppingList>>> {
       _errors(ref).report(e);
     }
   }
+
+  /// Aggiorna i conteggi di [listId] senza rileggere dal server: dopo una
+  /// modifica agli articoli la summary della lista deve restare coerente.
+  void applyItemDelta(int listId, {int totalDelta = 0, int checkedDelta = 0}) {
+    final prev = state.value;
+    if (prev == null || (totalDelta == 0 && checkedDelta == 0)) return;
+    state = AsyncData([
+      for (final l in prev)
+        if (l.id == listId)
+          l.copyWith(
+            itemTotal: _atLeastZero(l.itemTotal + totalDelta),
+            itemChecked: _atLeastZero(l.itemChecked + checkedDelta),
+          )
+        else
+          l,
+    ]);
+  }
 }
 
 final shoppingListsProvider =
@@ -130,6 +149,9 @@ class ShoppingItemsNotifier extends Notifier<AsyncValue<List<ShoppingItem>>> {
       );
       final prev = state.value ?? const <ShoppingItem>[];
       state = AsyncData([...prev, created]);
+      ref
+          .read(shoppingListsProvider.notifier)
+          .applyItemDelta(listId, totalDelta: 1);
     } catch (e) {
       _errors(ref).report(e);
     }
@@ -137,11 +159,17 @@ class ShoppingItemsNotifier extends Notifier<AsyncValue<List<ShoppingItem>>> {
 
   Future<void> toggle(int itemId, bool isChecked) async {
     final repo = ref.read(shoppingRepositoryProvider);
+    final wasChecked = _isChecked(itemId);
     _errors(ref).clear();
     try {
       final updated = await repo.toggleItem(itemId, isChecked);
       final prev = state.value ?? const <ShoppingItem>[];
       state = AsyncData(prev.map((i) => i.id == itemId ? updated : i).toList());
+      if (wasChecked != isChecked) {
+        ref
+            .read(shoppingListsProvider.notifier)
+            .applyItemDelta(listId, checkedDelta: isChecked ? 1 : -1);
+      }
     } catch (e) {
       _errors(ref).report(e);
     }
@@ -149,14 +177,29 @@ class ShoppingItemsNotifier extends Notifier<AsyncValue<List<ShoppingItem>>> {
 
   Future<void> remove(int itemId) async {
     final prev = state.value ?? const <ShoppingItem>[];
+    final wasChecked = _isChecked(itemId);
     final repo = ref.read(shoppingRepositoryProvider);
     _errors(ref).clear();
     try {
       await repo.deleteItem(itemId);
       state = AsyncData(prev.where((i) => i.id != itemId).toList());
+      ref
+          .read(shoppingListsProvider.notifier)
+          .applyItemDelta(
+            listId,
+            totalDelta: -1,
+            checkedDelta: wasChecked ? -1 : 0,
+          );
     } catch (e) {
       _errors(ref).report(e);
     }
+  }
+
+  bool _isChecked(int itemId) {
+    for (final i in state.value ?? const <ShoppingItem>[]) {
+      if (i.id == itemId) return i.isChecked;
+    }
+    return false;
   }
 }
 

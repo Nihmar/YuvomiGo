@@ -17,6 +17,13 @@ final class ShoppingList {
 
   int get openCount => itemTotal - itemChecked;
 
+  ShoppingList copyWith({int? itemTotal, int? itemChecked}) => ShoppingList(
+    id: id,
+    name: name,
+    itemTotal: itemTotal ?? this.itemTotal,
+    itemChecked: itemChecked ?? this.itemChecked,
+  );
+
   factory ShoppingList.fromJson(Map<String, dynamic> json) => ShoppingList(
     id: _asInt(json['id']) ?? -1,
     name: json['name'] as String? ?? '',
