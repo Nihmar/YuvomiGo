@@ -30,7 +30,11 @@ final class LoginTwoFactorRequired extends LoginResult {
 /// Wrapper sopra il client generato: crea il Dio con l'interceptor di
 /// sessione e espone login / 2FA / me / logout.
 final class YuvomiApi {
-  YuvomiApi({required String baseUrl, required SessionManager sessions}) {
+  YuvomiApi({
+    required String baseUrl,
+    required SessionManager sessions,
+    Future<void> Function()? onUnauthorized,
+  }) {
     _sessions = sessions;
     _dio = Dio(
       BaseOptions(
@@ -39,7 +43,9 @@ final class YuvomiApi {
         receiveTimeout: const Duration(seconds: 30),
       ),
     );
-    _dio.interceptors.add(AuthInterceptor(sessions));
+    _dio.interceptors.add(
+      AuthInterceptor(sessions, onUnauthorized: onUnauthorized),
+    );
     _client = gen.YuvomiApiClient(dio: _dio);
   }
 

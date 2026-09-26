@@ -23,6 +23,17 @@ class AuthController extends Notifier<AuthState> {
     return const AuthLoading();
   }
 
+  /// Costruisce l'API per [serverUrl] collegando il 401 globale: quando il
+  /// server dichiara la sessione scaduta si torna al login, non si resta
+  /// bloccati su una schermata di errore.
+  YuvomiApi _buildApi(SessionManager sessions, String serverUrl) {
+    return YuvomiApi(
+      baseUrl: serverUrl,
+      sessions: sessions,
+      onUnauthorized: () => _resetAfterFailure(sessions),
+    );
+  }
+
   /// Pulizia best-effort dopo un fallimento: lo stato in memoria viene
   /// sempre azzerato anche se lo storage persistente lancia.
   Future<void> _resetAfterFailure(SessionManager sessions) async {
@@ -38,12 +49,19 @@ class AuthController extends Notifier<AuthState> {
   /// Verifica la sessione salvata all'avvio dell'app.
   Future<void> _bootstrap() async {
     final sessions = ref.read(sessionManagerProvider);
-    final stored = await sessions.load();
+    StoredSession? stored;
+    try {
+      stored = await sessions.load();
+    } catch (_) {
+      // Storage non disponibile (es. libsecret assente): meglio partire
+      // dal login che restare sullo splash per sempre.
+      stored = null;
+    }
     if (stored == null) {
       state = const AuthUnauthenticated();
       return;
     }
-    _api = YuvomiApi(baseUrl: stored.serverUrl, sessions: sessions);
+    _api = _buildApi(sessions, stored.serverUrl);
     try {
       final user = await _api!.me();
       state = Authenticated(user: user);
@@ -63,9 +81,14 @@ class AuthController extends Notifier<AuthState> {
     required String password,
   }) async {
     final sessions = ref.read(sessionManagerProvider);
-    await sessions.clear();
+    try {
+      await sessions.clear();
+    } catch (_) {
+      // Storage non disponibile: si procede, la sessione in memoria viene
+      // comunque sovrascritta dal login.
+    }
     final normalized = normalizeServerUrl(serverUrl);
-    _api = YuvomiApi(baseUrl: normalized, sessions: sessions);
+    _api = _buildApi(sessions, normalized);
     state = const AuthLoading();
     try {
       final result = await _api!.login(username, password);
@@ -106,13 +129,23 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
-  /// Logout: revoca la sessione lato server e azzera lo stato locale.
+  /// Logout: azzera lo stato locale (sempre) e revoca la sessione lato
+  /// server (best-effort).
   Future<void> logout() async {
     final sessions = ref.read(sessionManagerProvider);
-    await _api?.logout();
-    await sessions.clear();
+    final api = _api;
     _api = null;
     state = const AuthUnauthenticated();
+    try {
+      await api?.logout();
+    } catch (_) {
+      // Server non raggiungibile: la sessione locale va comunque cancellata.
+    }
+    try {
+      await sessions.clear();
+    } catch (_) {
+      // Storage non disponibile: lo stato in memoria è già pulito.
+    }
   }
 }
 

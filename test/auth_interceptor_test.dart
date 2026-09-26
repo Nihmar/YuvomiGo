@@ -10,9 +10,15 @@ import 'utils/in_memory_storage.dart';
 /// Adapter HTTP fake: restituisce una risposta fissa e cattura gli header
 /// della richiesta finale (dopo l'interceptor).
 final class _FakeAdapter implements HttpClientAdapter {
-  _FakeAdapter({this.setCookies = const []});
+  _FakeAdapter({
+    this.setCookies = const [],
+    this.statusCode = 200,
+    this.csrfToken,
+  });
 
   final List<String> setCookies;
+  final int statusCode;
+  final String? csrfToken;
   final Map<String, dynamic> lastRequestHeaders = {};
 
   @override
@@ -28,7 +34,10 @@ final class _FakeAdapter implements HttpClientAdapter {
     if (setCookies.isNotEmpty) {
       headers['set-cookie'] = setCookies;
     }
-    return ResponseBody.fromString('{}', 200, headers: headers);
+    if (csrfToken != null) {
+      headers['x-csrf-token'] = [csrfToken!];
+    }
+    return ResponseBody.fromString('{}', statusCode, headers: headers);
   }
 
   @override
@@ -39,24 +48,37 @@ Future<Map<String, dynamic>> _request(
   String method,
   SessionManager sessions, {
   List<String> setCookies = const [],
+  int statusCode = 200,
+  String? csrfToken,
+  String path = '/test',
+  Future<void> Function()? onUnauthorized,
 }) async {
-  final adapter = _FakeAdapter(setCookies: setCookies);
+  final adapter = _FakeAdapter(
+    setCookies: setCookies,
+    statusCode: statusCode,
+    csrfToken: csrfToken,
+  );
   final dio = Dio(BaseOptions(baseUrl: 'http://test.local'));
-  dio.interceptors.add(AuthInterceptor(sessions));
+  dio.interceptors.add(
+    AuthInterceptor(sessions, onUnauthorized: onUnauthorized),
+  );
   dio.httpClientAdapter = adapter;
 
-  final path = '/test';
-  switch (method) {
-    case 'POST':
-      await dio.post<void>(path);
-    case 'GET':
-      await dio.get<void>(path);
-    case 'PATCH':
-      await dio.patch<void>(path);
-    case 'DELETE':
-      await dio.delete<void>(path);
-    default:
-      throw ArgumentError(method);
+  try {
+    switch (method) {
+      case 'POST':
+        await dio.post<void>(path);
+      case 'GET':
+        await dio.get<void>(path);
+      case 'PATCH':
+        await dio.patch<void>(path);
+      case 'DELETE':
+        await dio.delete<void>(path);
+      default:
+        throw ArgumentError(method);
+    }
+  } on DioException {
+    // Status non-2xx: qui interessa solo il passaggio nell'interceptor.
   }
   return adapter.lastRequestHeaders;
 }
@@ -130,6 +152,78 @@ void main() {
       final m2 = SessionManager(storage);
       final loaded = await m2.load();
       expect(loaded!.sessionCookie, 'rotated');
+    });
+
+    test('captures a rotated X-CSRF-Token from the response', () async {
+      final storage = InMemoryStorage();
+      final sessions = SessionManager(storage);
+      await sessions.setSession(
+        serverUrl: 'http://test.local',
+        sessionCookie: 'cookie1',
+        csrfToken: 'old',
+      );
+
+      await _request('GET', sessions, csrfToken: 'new-token');
+
+      expect(sessions.session!.csrfToken, 'new-token');
+      final m2 = SessionManager(storage);
+      final loaded = await m2.load();
+      expect(loaded!.csrfToken, 'new-token');
+    });
+
+    test('calls onUnauthorized on a 401 outside the auth routes', () async {
+      final sessions = SessionManager(InMemoryStorage());
+      var calls = 0;
+
+      await _request(
+        'GET',
+        sessions,
+        statusCode: 401,
+        onUnauthorized: () async => calls++,
+      );
+
+      expect(calls, 1);
+    });
+
+    test(
+      'does not call onUnauthorized on a 401 from the login route',
+      () async {
+        final sessions = SessionManager(InMemoryStorage());
+        var calls = 0;
+
+        await _request(
+          'POST',
+          sessions,
+          path: '/api/v1/auth/login',
+          statusCode: 401,
+          onUnauthorized: () async => calls++,
+        );
+
+        expect(calls, 0);
+      },
+    );
+
+    test('a failing onUnauthorized does not swallow the 401', () async {
+      final sessions = SessionManager(InMemoryStorage());
+      final dio = Dio(BaseOptions(baseUrl: 'http://test.local'));
+      dio.interceptors.add(
+        AuthInterceptor(
+          sessions,
+          onUnauthorized: () async => throw StateError('storage down'),
+        ),
+      );
+      dio.httpClientAdapter = _FakeAdapter(statusCode: 401);
+
+      await expectLater(
+        dio.get<void>('/test'),
+        throwsA(
+          isA<DioException>().having(
+            (e) => e.response?.statusCode,
+            'statusCode',
+            401,
+          ),
+        ),
+      );
     });
   });
 }
