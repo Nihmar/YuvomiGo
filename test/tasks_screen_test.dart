@@ -148,6 +148,48 @@ void main() {
     expect(repo.tasks.map((t) => t.title), contains('Nuova task'));
   });
 
+  testWidgets('Creating a task can set the priority', (tester) async {
+    final repo = FakeTaskRepository();
+    await tester.pumpWidget(_pump(const TasksScreen(), repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Compito urgente');
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Urgente').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Aggiungi'));
+    await tester.pumpAndSettle();
+
+    expect(repo.tasks.last.title, 'Compito urgente');
+    expect(repo.tasks.last.priority, 'urgent');
+  });
+
+  testWidgets('Creating a task can set a due date', (tester) async {
+    final repo = FakeTaskRepository();
+    await tester.pumpWidget(_pump(const TasksScreen(), repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Con scadenza');
+    await tester.tap(find.text('Nessuna data'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Aggiungi'));
+    await tester.pumpAndSettle();
+
+    final now = DateTime.now();
+    final expected =
+        '${now.year.toString().padLeft(4, '0')}-'
+        '${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}';
+    expect(repo.tasks.last.dueDate, expected);
+  });
+
   testWidgets('Deleting a task removes it', (tester) async {
     final repo = FakeTaskRepository();
     await tester.pumpWidget(_pump(const TasksScreen(), repo));

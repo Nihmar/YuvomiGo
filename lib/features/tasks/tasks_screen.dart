@@ -82,48 +82,10 @@ final class TasksScreen extends ConsumerWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _promptForTask(context, ref),
+        onPressed: () => _TaskEditorDialog.show(context),
         child: const Icon(Icons.add),
       ),
     );
-  }
-
-  void _promptForTask(BuildContext context, WidgetRef ref) {
-    final controller = TextEditingController();
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Nuova task'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(labelText: 'Titolo'),
-          onSubmitted: (value) => _submit(controller, dialogContext, ref),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Annulla'),
-          ),
-          FilledButton(
-            onPressed: () => _submit(controller, dialogContext, ref),
-            child: const Text('Aggiungi'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _submit(
-    TextEditingController controller,
-    BuildContext dialogContext,
-    WidgetRef ref,
-  ) {
-    final title = controller.text.trim();
-    if (title.isNotEmpty) {
-      ref.read(tasksProvider.notifier).add(title: title);
-    }
-    Navigator.of(dialogContext).pop();
   }
 
   void _confirmDelete(BuildContext context, WidgetRef ref, Task task) {
@@ -165,4 +127,140 @@ final class _TaskSubtitle extends StatelessWidget {
     if (parts.isEmpty) return const SizedBox.shrink();
     return Text(parts.join(' · '));
   }
+}
+
+/// Dialog di creazione task: titolo + data + priorità.
+final class _TaskEditorDialog extends ConsumerStatefulWidget {
+  const _TaskEditorDialog();
+
+  static Future<void> show(BuildContext context) {
+    return showDialog<void>(
+      context: context,
+      builder: (_) => const _TaskEditorDialog(),
+    );
+  }
+
+  @override
+  ConsumerState<_TaskEditorDialog> createState() => _TaskEditorDialogState();
+}
+
+final class _TaskEditorDialogState extends ConsumerState<_TaskEditorDialog> {
+  static const _priorities = <String, String>{
+    'none': 'Nessuna',
+    'low': 'Bassa',
+    'medium': 'Media',
+    'high': 'Alta',
+    'urgent': 'Urgente',
+  };
+
+  final _title = TextEditingController();
+  String? _dueDate;
+  String _priority = 'none';
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _title.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dueDate == null ? now : DateTime.parse(_dueDate!),
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 5),
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _dueDate = _dateKey(picked));
+  }
+
+  Future<void> _save() async {
+    final title = _title.text.trim();
+    if (title.isEmpty) return;
+    setState(() => _busy = true);
+    final navigator = Navigator.of(context);
+    final created = await ref
+        .read(tasksProvider.notifier)
+        .add(title: title, dueDate: _dueDate, priority: _priority);
+    if (!mounted) return;
+    if (!created) {
+      setState(() => _busy = false);
+      return;
+    }
+    navigator.pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Nuova task'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _title,
+            autofocus: true,
+            decoration: const InputDecoration(labelText: 'Titolo'),
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _busy ? null : _pickDate,
+                  icon: const Icon(Icons.event),
+                  label: Text(_dueDate ?? 'Nessuna data'),
+                ),
+              ),
+              if (_dueDate != null)
+                IconButton(
+                  tooltip: 'Rimuovi data',
+                  icon: const Icon(Icons.clear),
+                  onPressed: _busy
+                      ? null
+                      : () => setState(() => _dueDate = null),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            initialValue: _priority,
+            decoration: const InputDecoration(labelText: 'Priorità'),
+            items: [
+              for (final entry in _priorities.entries)
+                DropdownMenuItem(value: entry.key, child: Text(entry.value)),
+            ],
+            onChanged: _busy
+                ? null
+                : (value) => setState(() => _priority = value ?? 'none'),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _busy ? null : () => Navigator.of(context).pop(),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: _busy ? null : _save,
+          child: _busy
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Aggiungi'),
+        ),
+      ],
+    );
+  }
+}
+
+String _dateKey(DateTime dt) {
+  return '${dt.year.toString().padLeft(4, '0')}-'
+      '${dt.month.toString().padLeft(2, '0')}-'
+      '${dt.day.toString().padLeft(2, '0')}';
 }

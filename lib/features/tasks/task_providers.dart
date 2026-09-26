@@ -65,7 +65,9 @@ final class TasksNotifier extends Notifier<AsyncValue<List<Task>>> {
     }
   }
 
-  Future<void> add({
+  /// Crea la task; ritorna false se il salvataggio fallisce (il dialog
+  /// resta aperto e l'errore va allo SnackBar).
+  Future<bool> add({
     required String title,
     String? dueDate,
     String priority = 'none',
@@ -78,14 +80,16 @@ final class TasksNotifier extends Notifier<AsyncValue<List<Task>>> {
         dueDate: dueDate,
         priority: priority,
       );
-      if (!ref.mounted) return;
+      if (!ref.mounted) return false;
       final tasks = [...state.value ?? const <Task>[], created]
         ..sort(compareTasksByDueDate);
       state = AsyncData(tasks);
+      return true;
     } catch (e) {
-      if (!ref.mounted) return;
+      if (!ref.mounted) return false;
       // La lista resta quella di prima: l'errore va allo SnackBar.
       ref.read(tasksActionErrorProvider.notifier).report(e);
+      return false;
     }
   }
 
