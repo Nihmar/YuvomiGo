@@ -169,6 +169,7 @@ final class _TaskSubtitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final parts = <String>[];
     if (task.dueDate != null) parts.add(task.dueDate!);
+    if (task.status == TaskStatus.inProgress) parts.add('in corso');
     if (task.priority != 'none') parts.add(task.priority);
     if (task.isRecurring) parts.add('ricorrente');
     if (parts.isEmpty) return const SizedBox.shrink();

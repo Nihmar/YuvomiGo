@@ -88,6 +88,20 @@ void main() {
     expect(tasks[2].id, 1); // senza data ultima
   });
 
+  test('fetchTasks asks for open and in_progress tasks', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('GET', '/api/v1/tasks', {'data': <Object>[]});
+    final repo = TaskRepository(apiWith(adapter));
+    await repo.fetchTasks();
+
+    // Il server filtra per valore esatto: senza entrambi gli status le task
+    // "in corso" (impostabili dal web) sparirebbero dall'app.
+    expect(adapter.requests.first.queryParameters['status'], [
+      'open',
+      'in_progress',
+    ]);
+  });
+
   test('fetchTasks tolerates a missing data payload', () async {
     final adapter = _RoutingAdapter();
     adapter.addRoute('GET', '/api/v1/tasks', {'data': null});

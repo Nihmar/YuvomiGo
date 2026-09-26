@@ -29,8 +29,9 @@ final class FakeTaskRepository extends TaskRepository {
   int _nextId = 100;
 
   @override
-  Future<List<Task>> fetchTasks({String status = 'open'}) async =>
-      tasks.toList();
+  Future<List<Task>> fetchTasks({
+    List<String> statuses = const ['open', 'in_progress'],
+  }) async => tasks.toList();
 
   @override
   Future<Task> createTask({
@@ -154,5 +155,19 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repo.tasks, hasLength(1));
+  });
+
+  testWidgets('In-progress tasks are shown with a status label', (
+    tester,
+  ) async {
+    final repo = FakeTaskRepository();
+    repo.tasks.add(
+      Task(id: 3, title: 'Riparare bici', status: TaskStatus.inProgress),
+    );
+    await tester.pumpWidget(_pump(const TasksScreen(), repo));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Riparare bici'), findsOneWidget);
+    expect(find.textContaining('in corso'), findsOneWidget);
   });
 }

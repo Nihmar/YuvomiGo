@@ -11,12 +11,17 @@ base class TaskRepository {
 
   final YuvomiApi _api;
 
-  /// Task aperte (default) — `status` opzionale.
-  Future<List<Task>> fetchTasks({String status = 'open'}) {
+  /// Task da mostrare (default: aperte e in corso).
+  ///
+  /// Il server filtra per valore esatto con OR: `status=open&status=in_progress`
+  /// è quello che serve per non far sparire le task "in corso" create dal web.
+  Future<List<Task>> fetchTasks({
+    List<String> statuses = const ['open', 'in_progress'],
+  }) {
     return mapApiErrors(() async {
       final res = await _api.dio.get<dynamic>(
         '/api/v1/tasks',
-        queryParameters: {'status': status},
+        queryParameters: {'status': statuses},
       );
       final data = (res.data is Map)
           ? (res.data as Map<String, dynamic>)['data']
