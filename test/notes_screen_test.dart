@@ -170,7 +170,9 @@ void main() {
     await tester.tap(find.byIcon(Icons.add));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).at(1), 'nota blu');
-    await tester.ensureVisible(find.byKey(const ValueKey('note-color-#BBDEFB')));
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('note-color-#BBDEFB')),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('note-color-#BBDEFB')));
     await tester.pumpAndSettle();
