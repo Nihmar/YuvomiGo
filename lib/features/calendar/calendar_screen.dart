@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yuvomigo/core/widgets/error_retry_tile.dart';
+import 'package:yuvomigo/core/utils/date_utils.dart';
 import 'package:yuvomigo/features/calendar/calendar_models.dart';
 import 'package:yuvomigo/features/calendar/calendar_providers.dart';
 import 'package:yuvomigo/features/home/modules_button.dart';
@@ -98,16 +99,10 @@ Map<String, List<CalendarEvent>> _groupByDay(List<CalendarEvent> events) {
   final groups = <String, List<CalendarEvent>>{};
   for (final e in events) {
     final dt = _parseLocal(e.startDatetime);
-    final date = dt == null ? 's.d.' : _dateKey(dt);
+    final date = dt == null ? 's.d.' : dateKey(dt);
     groups.putIfAbsent(date, () => []).add(e);
   }
   return groups;
-}
-
-String _dateKey(DateTime dt) {
-  return '${dt.year.toString().padLeft(4, '0')}-'
-      '${dt.month.toString().padLeft(2, '0')}-'
-      '${dt.day.toString().padLeft(2, '0')}';
 }
 
 DateTime? _parseLocal(String iso) {

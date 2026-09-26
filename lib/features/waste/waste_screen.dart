@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:yuvomigo/core/widgets/error_retry_tile.dart';
+import 'package:yuvomigo/core/utils/color_utils.dart';
+import 'package:yuvomigo/core/utils/date_utils.dart';
 import 'package:yuvomigo/features/waste/waste_models.dart';
 import 'package:yuvomigo/features/waste/waste_providers.dart';
 
@@ -110,7 +112,7 @@ final class _NextPickupsTab extends ConsumerWidget {
             itemCount: list.length,
             itemBuilder: (context, index) {
               final pickup = list[index];
-              final color = parseWasteColor(pickup.typeColor);
+              final color = parseHexColor(pickup.typeColor);
               return ListTile(
                 leading: CircleAvatar(
                   backgroundColor:
@@ -196,7 +198,7 @@ final class _PickupsTab extends ConsumerWidget {
             itemBuilder: (context, index) {
               final pickup = list[index];
               final type = typesById[pickup.typeId];
-              final color = parseWasteColor(type?.color);
+              final color = parseHexColor(type?.color);
               final date = DateTime.tryParse(pickup.date);
               final locale = Localizations.localeOf(context).toString();
               final subtitle = <String>[
@@ -300,12 +302,12 @@ final class _PickupEditorDialogState
     final success = pickup == null
         ? await notifier.add(
             typeId: typeId,
-            date: _dateKey(_date),
+            date: dateKey(_date),
             note: note.isEmpty ? null : note,
           )
         : await notifier.update(
             pickup.id,
-            date: _dateKey(_date),
+            date: dateKey(_date),
             note: note.isEmpty ? null : note,
           );
     if (!mounted) return;
@@ -380,19 +382,4 @@ final class _PickupEditorDialogState
       ],
     );
   }
-}
-
-Color? parseWasteColor(String? hex) {
-  if (hex == null) return null;
-  final cleaned = hex.replaceFirst('#', '');
-  if (cleaned.length != 6) return null;
-  final value = int.tryParse(cleaned, radix: 16);
-  if (value == null) return null;
-  return Color(0xFF000000 | value);
-}
-
-String _dateKey(DateTime date) {
-  return '${date.year.toString().padLeft(4, '0')}-'
-      '${date.month.toString().padLeft(2, '0')}-'
-      '${date.day.toString().padLeft(2, '0')}';
 }

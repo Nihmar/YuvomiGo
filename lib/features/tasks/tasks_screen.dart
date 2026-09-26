@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yuvomigo/core/widgets/error_retry_tile.dart';
 import 'package:yuvomigo/features/tasks/task_models.dart';
+import 'package:yuvomigo/core/utils/date_utils.dart';
 import 'package:yuvomigo/features/tasks/task_providers.dart';
 import 'package:yuvomigo/features/home/modules_button.dart';
 import 'package:yuvomigo/features/settings/settings_button.dart';
@@ -178,7 +179,7 @@ final class _TaskEditorDialogState extends ConsumerState<_TaskEditorDialog> {
       lastDate: DateTime(now.year + 5),
     );
     if (picked == null || !mounted) return;
-    setState(() => _dueDate = _dateKey(picked));
+    setState(() => _dueDate = dateKey(picked));
   }
 
   Future<void> _save() async {
@@ -262,10 +263,4 @@ final class _TaskEditorDialogState extends ConsumerState<_TaskEditorDialog> {
       ],
     );
   }
-}
-
-String _dateKey(DateTime dt) {
-  return '${dt.year.toString().padLeft(4, '0')}-'
-      '${dt.month.toString().padLeft(2, '0')}-'
-      '${dt.day.toString().padLeft(2, '0')}';
 }

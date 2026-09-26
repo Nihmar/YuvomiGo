@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:yuvomigo/core/widgets/error_retry_tile.dart';
+import 'package:yuvomigo/core/widgets/detail_row.dart';
+import 'package:yuvomigo/core/utils/date_utils.dart';
 import 'package:yuvomigo/features/inventory/inventory_models.dart';
 import 'package:yuvomigo/features/inventory/inventory_providers.dart';
 
@@ -212,13 +214,13 @@ final class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                 style: Theme.of(sheetContext).textTheme.titleLarge,
               ),
               const SizedBox(height: 12),
-              _DetailRow(label: 'Categoria', value: item.categoryName),
-              _DetailRow(label: 'Posizione', value: item.locationPath),
-              _DetailRow(label: 'Marca', value: item.brand),
-              _DetailRow(label: 'Modello', value: item.model),
-              _DetailRow(label: 'Seriale', value: item.serialNumber),
-              _DetailRow(label: 'Acquistato il', value: item.purchaseDate),
-              _DetailRow(
+              DetailRow(label: 'Categoria', value: item.categoryName),
+              DetailRow(label: 'Posizione', value: item.locationPath),
+              DetailRow(label: 'Marca', value: item.brand),
+              DetailRow(label: 'Modello', value: item.model),
+              DetailRow(label: 'Seriale', value: item.serialNumber),
+              DetailRow(label: 'Acquistato il', value: item.purchaseDate),
+              DetailRow(
                 label: 'Prezzo',
                 value: item.purchasePrice == null
                     ? null
@@ -228,18 +230,18 @@ final class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                         decimalDigits: 2,
                       ).format(item.purchasePrice!),
               ),
-              _DetailRow(label: 'Venditore', value: item.vendor),
-              _DetailRow(
+              DetailRow(label: 'Venditore', value: item.vendor),
+              DetailRow(
                 label: 'Garanzia',
                 value: item.warrantyMonths == null
                     ? null
                     : '${item.warrantyMonths} mesi',
               ),
-              _DetailRow(
+              DetailRow(
                 label: 'Condizione',
                 value: inventoryConditionLabel(item.condition),
               ),
-              _DetailRow(
+              DetailRow(
                 label: 'Stato',
                 value: inventoryStatusLabel(item.status),
               ),
@@ -374,7 +376,7 @@ final class _InventoryEditorDialogState
             locationId: _locationId,
             purchaseDate: _purchaseDate == null
                 ? null
-                : _dateKey(_purchaseDate!),
+                : dateKey(_purchaseDate!),
             purchasePrice: _parseDouble(_price),
             vendor: _nullIfEmpty(_vendor),
             warrantyMonths: int.tryParse(_warranty.text.trim()),
@@ -392,7 +394,7 @@ final class _InventoryEditorDialogState
             locationId: _locationId,
             purchaseDate: _purchaseDate == null
                 ? null
-                : _dateKey(_purchaseDate!),
+                : dateKey(_purchaseDate!),
             purchasePrice: _parseDouble(_price),
             vendor: _nullIfEmpty(_vendor),
             warrantyMonths: int.tryParse(_warranty.text.trim()),
@@ -640,35 +642,4 @@ final class _InventoryEditorDialogState
       ],
     );
   }
-}
-
-final class _DetailRow extends StatelessWidget {
-  const _DetailRow({required this.label, required this.value});
-
-  final String label;
-  final String? value;
-
-  @override
-  Widget build(BuildContext context) {
-    if (value == null || value!.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(label, style: Theme.of(context).textTheme.bodySmall),
-          ),
-          Expanded(child: Text(value!)),
-        ],
-      ),
-    );
-  }
-}
-
-String _dateKey(DateTime date) {
-  return '${date.year.toString().padLeft(4, '0')}-'
-      '${date.month.toString().padLeft(2, '0')}-'
-      '${date.day.toString().padLeft(2, '0')}';
 }

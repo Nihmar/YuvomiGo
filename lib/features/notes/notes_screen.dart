@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yuvomigo/core/widgets/error_retry_tile.dart';
+import 'package:yuvomigo/core/utils/color_utils.dart';
 import 'package:yuvomigo/features/notes/note_models.dart';
 import 'package:yuvomigo/features/notes/note_providers.dart';
 import 'package:yuvomigo/features/home/modules_button.dart';
@@ -78,7 +79,7 @@ final class NotesScreen extends ConsumerWidget {
                     note.pinned ? Icons.push_pin : Icons.push_pin_outlined,
                     color: note.pinned
                         ? Theme.of(context).colorScheme.primary
-                        : parseNoteColor(note.color),
+                        : parseHexColor(note.color),
                   ),
                   title: Text(
                     hasTitle ? title! : firstLine,
@@ -376,7 +377,7 @@ final class _ColorDot extends StatelessWidget {
         width: 32,
         height: 32,
         decoration: BoxDecoration(
-          color: parseNoteColor(hex),
+          color: parseHexColor(hex),
           shape: BoxShape.circle,
           border: Border.all(
             color: selected
@@ -394,14 +395,6 @@ final class _ColorDot extends StatelessWidget {
 }
 
 /// Converte un colore `#RRGGBB` della nota in [Color]; null se non valido.
-Color? parseNoteColor(String? hex) {
-  if (hex == null) return null;
-  final cleaned = hex.replaceFirst('#', '');
-  if (cleaned.length != 6) return null;
-  final value = int.tryParse(cleaned, radix: 16);
-  if (value == null) return null;
-  return Color(0xFF000000 | value);
-}
 
 /// Dialog di gestione delle categorie delle note (crea/rinomina/elimina).
 final class _ManageCategoriesDialog extends ConsumerStatefulWidget {

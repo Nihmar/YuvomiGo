@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:yuvomigo/core/widgets/error_retry_tile.dart';
+import 'package:yuvomigo/core/widgets/period_bar.dart';
+import 'package:yuvomigo/core/utils/color_utils.dart';
+import 'package:yuvomigo/core/utils/date_utils.dart';
 import 'package:yuvomigo/features/schedule/schedule_models.dart';
 import 'package:yuvomigo/features/schedule/schedule_providers.dart';
 
@@ -16,9 +19,16 @@ final class ScheduleScreen extends ConsumerStatefulWidget {
 final class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
   static const _scrollPhysics = AlwaysScrollableScrollPhysics();
 
-  DateTime _week = _mondayOf(DateTime.now());
+  DateTime _week = mondayOf(DateTime.now());
 
-  String get _weekKey => _dateKey(_week);
+  String get _weekKey => dateKey(_week);
+
+  String get _weekLabel {
+    final locale = Localizations.localeOf(context).toString();
+    final end = DateTime(_week.year, _week.month, _week.day + 6);
+    return '${DateFormat('d MMM', locale).format(_week)} – '
+        '${DateFormat('d MMM', locale).format(end)}';
+  }
 
   void _shiftWeek(int days) {
     setState(() {
@@ -36,11 +46,13 @@ final class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
       appBar: AppBar(title: const Text('Turni')),
       body: Column(
         children: [
-          _WeekBar(
-            week: _week,
+          PeriodBar(
+            label: _weekLabel,
             onPrevious: () => _shiftWeek(-7),
             onNext: () => _shiftWeek(7),
-            onToday: () => setState(() => _week = _mondayOf(DateTime.now())),
+            onToday: () => setState(() => _week = mondayOf(DateTime.now())),
+            previousTooltip: 'Settimana precedente',
+            nextTooltip: 'Settimana successiva',
           ),
           const Divider(height: 1),
           Expanded(
@@ -87,54 +99,6 @@ final class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-final class _WeekBar extends StatelessWidget {
-  const _WeekBar({
-    required this.week,
-    required this.onPrevious,
-    required this.onNext,
-    required this.onToday,
-  });
-
-  final DateTime week;
-  final VoidCallback onPrevious;
-  final VoidCallback onNext;
-  final VoidCallback onToday;
-
-  @override
-  Widget build(BuildContext context) {
-    final locale = Localizations.localeOf(context).toString();
-    final end = DateTime(week.year, week.month, week.day + 6);
-    final label =
-        '${DateFormat('d MMM', locale).format(week)} – '
-        '${DateFormat('d MMM', locale).format(end)}';
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: Row(
-        children: [
-          IconButton(
-            tooltip: 'Settimana precedente',
-            icon: const Icon(Icons.chevron_left),
-            onPressed: onPrevious,
-          ),
-          Expanded(
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ),
-          IconButton(
-            tooltip: 'Settimana successiva',
-            icon: const Icon(Icons.chevron_right),
-            onPressed: onNext,
-          ),
-          TextButton(onPressed: onToday, child: const Text('Oggi')),
         ],
       ),
     );
@@ -193,7 +157,7 @@ final class _EntryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = entry.isFree
         ? Theme.of(context).colorScheme.outlineVariant
-        : _parseColor(entry.shiftType?.color) ??
+        : parseHexColor(entry.shiftType?.color) ??
               Theme.of(context).colorScheme.primaryContainer;
     final parts = <String>[
       if (member != null) member!.displayName,
@@ -217,24 +181,4 @@ final class _EntryTile extends StatelessWidget {
       subtitle: Text(parts.join(' · ')),
     );
   }
-}
-
-Color? _parseColor(String? hex) {
-  if (hex == null) return null;
-  final cleaned = hex.replaceFirst('#', '');
-  if (cleaned.length != 6) return null;
-  final value = int.tryParse(cleaned, radix: 16);
-  if (value == null) return null;
-  return Color(0xFF000000 | value);
-}
-
-DateTime _mondayOf(DateTime date) {
-  final day = DateTime(date.year, date.month, date.day);
-  return DateTime(day.year, day.month, day.day - (day.weekday - 1));
-}
-
-String _dateKey(DateTime date) {
-  return '${date.year.toString().padLeft(4, '0')}-'
-      '${date.month.toString().padLeft(2, '0')}-'
-      '${date.day.toString().padLeft(2, '0')}';
 }

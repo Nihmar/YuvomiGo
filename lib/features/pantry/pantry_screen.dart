@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:yuvomigo/core/widgets/error_retry_tile.dart';
+import 'package:yuvomigo/core/utils/date_utils.dart';
 import 'package:yuvomigo/features/pantry/pantry_models.dart';
 import 'package:yuvomigo/features/pantry/pantry_providers.dart';
 
@@ -233,7 +234,7 @@ final class _PantryEditorDialogState
             unit: _unit,
             locationId: _locationId,
             category: _category,
-            expiresOn: _expiresOn == null ? null : _dateKey(_expiresOn!),
+            expiresOn: _expiresOn == null ? null : dateKey(_expiresOn!),
             minQuantity: double.tryParse(
               _minQuantity.text.replaceAll(',', '.'),
             ),
@@ -245,7 +246,7 @@ final class _PantryEditorDialogState
             unit: _unit,
             locationId: _locationId,
             category: _category,
-            expiresOn: _expiresOn == null ? null : _dateKey(_expiresOn!),
+            expiresOn: _expiresOn == null ? null : dateKey(_expiresOn!),
             minQuantity: double.tryParse(
               _minQuantity.text.replaceAll(',', '.'),
             ),
@@ -399,10 +400,4 @@ final class _PantryEditorDialogState
       ],
     );
   }
-}
-
-String _dateKey(DateTime date) {
-  return '${date.year.toString().padLeft(4, '0')}-'
-      '${date.month.toString().padLeft(2, '0')}-'
-      '${date.day.toString().padLeft(2, '0')}';
 }

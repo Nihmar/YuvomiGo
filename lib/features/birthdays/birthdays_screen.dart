@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yuvomigo/core/widgets/error_retry_tile.dart';
+import 'package:yuvomigo/core/utils/date_utils.dart';
 import 'package:yuvomigo/features/birthdays/birthday_models.dart';
 import 'package:yuvomigo/features/birthdays/birthday_providers.dart';
 
@@ -195,13 +196,13 @@ final class _BirthdayEditorDialogState
     final success = birthday == null
         ? await notifier.add(
             name: name,
-            birthDate: _dateKey(_birthDate),
+            birthDate: dateKey(_birthDate),
             notes: notes.isEmpty ? null : notes,
           )
         : await notifier.update(
             birthday.id,
             name: name,
-            birthDate: _dateKey(_birthDate),
+            birthDate: dateKey(_birthDate),
             notes: notes.isEmpty ? null : notes,
           );
     if (!mounted) return;
@@ -264,10 +265,4 @@ final class _BirthdayEditorDialogState
     final month = date.month.toString().padLeft(2, '0');
     return '$day/$month/${date.year}';
   }
-}
-
-String _dateKey(DateTime date) {
-  return '${date.year.toString().padLeft(4, '0')}-'
-      '${date.month.toString().padLeft(2, '0')}-'
-      '${date.day.toString().padLeft(2, '0')}';
 }

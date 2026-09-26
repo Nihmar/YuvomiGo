@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:yuvomigo/core/widgets/error_retry_tile.dart';
+import 'package:yuvomigo/core/widgets/detail_row.dart';
 import 'package:yuvomigo/features/documents/document_file_picker.dart';
 import 'package:yuvomigo/features/documents/document_models.dart';
 import 'package:yuvomigo/features/documents/document_providers.dart';
@@ -215,21 +216,21 @@ final class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
                 Text(document.description!),
               ],
               const SizedBox(height: 12),
-              _DetailRow(label: 'Cartella', value: document.folderName),
-              _DetailRow(
+              DetailRow(label: 'Cartella', value: document.folderName),
+              DetailRow(
                 label: 'Categoria',
                 value: document.category.isEmpty
                     ? null
                     : documentCategoryLabel(document.category),
               ),
-              _DetailRow(label: 'File', value: document.originalName),
-              _DetailRow(label: 'Tipo', value: document.mimeType),
-              _DetailRow(
+              DetailRow(label: 'File', value: document.originalName),
+              DetailRow(label: 'Tipo', value: document.mimeType),
+              DetailRow(
                 label: 'Dimensione',
                 value: formatFileSize(document.fileSize),
               ),
-              _DetailRow(label: 'Caricato da', value: document.creatorName),
-              _DetailRow(
+              DetailRow(label: 'Caricato da', value: document.creatorName),
+              DetailRow(
                 label: 'Aggiornato',
                 value: _formatDate(document.updatedAt, locale),
               ),
@@ -253,31 +254,6 @@ final class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
     final date = raw == null ? null : DateTime.tryParse(raw)?.toLocal();
     if (date == null) return null;
     return DateFormat('d MMM yyyy, HH:mm', locale).format(date);
-  }
-}
-
-final class _DetailRow extends StatelessWidget {
-  const _DetailRow({required this.label, required this.value});
-
-  final String label;
-  final String? value;
-
-  @override
-  Widget build(BuildContext context) {
-    if (value == null || value!.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(label, style: Theme.of(context).textTheme.bodySmall),
-          ),
-          Expanded(child: Text(value!)),
-        ],
-      ),
-    );
   }
 }
 

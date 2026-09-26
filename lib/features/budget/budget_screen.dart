@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:yuvomigo/core/widgets/error_retry_tile.dart';
+import 'package:yuvomigo/core/widgets/period_bar.dart';
 import 'package:yuvomigo/features/budget/budget_models.dart';
 import 'package:yuvomigo/features/budget/budget_providers.dart';
 import 'package:yuvomigo/features/settings/preferences_providers.dart';
@@ -45,7 +46,7 @@ final class _BudgetScreenState extends ConsumerState<BudgetScreen> {
       appBar: AppBar(title: const Text('Budget')),
       body: Column(
         children: [
-          _MonthBar(
+          PeriodBar(
             label: _monthLabel,
             onPrevious: () => _shiftMonth(-1),
             onNext: () => _shiftMonth(1),
@@ -53,6 +54,8 @@ final class _BudgetScreenState extends ConsumerState<BudgetScreen> {
               () =>
                   _month = DateTime(DateTime.now().year, DateTime.now().month),
             ),
+            previousTooltip: 'Mese precedente',
+            nextTooltip: 'Mese successivo',
           ),
           const Divider(height: 1),
           Expanded(
@@ -98,49 +101,6 @@ final class _BudgetScreenState extends ConsumerState<BudgetScreen> {
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-final class _MonthBar extends StatelessWidget {
-  const _MonthBar({
-    required this.label,
-    required this.onPrevious,
-    required this.onNext,
-    required this.onToday,
-  });
-
-  final String label;
-  final VoidCallback onPrevious;
-  final VoidCallback onNext;
-  final VoidCallback onToday;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: Row(
-        children: [
-          IconButton(
-            tooltip: 'Mese precedente',
-            icon: const Icon(Icons.chevron_left),
-            onPressed: onPrevious,
-          ),
-          Expanded(
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ),
-          IconButton(
-            tooltip: 'Mese successivo',
-            icon: const Icon(Icons.chevron_right),
-            onPressed: onNext,
-          ),
-          TextButton(onPressed: onToday, child: const Text('Oggi')),
         ],
       ),
     );

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:yuvomigo/core/widgets/error_retry_tile.dart';
+import 'package:yuvomigo/core/widgets/period_bar.dart';
+import 'package:yuvomigo/core/utils/date_utils.dart';
 import 'package:yuvomigo/features/meals/meal_models.dart';
 import 'package:yuvomigo/features/meals/meal_providers.dart';
 
@@ -16,9 +18,16 @@ final class MealsScreen extends ConsumerStatefulWidget {
 final class _MealsScreenState extends ConsumerState<MealsScreen> {
   static const _scrollPhysics = AlwaysScrollableScrollPhysics();
 
-  DateTime _week = _mondayOf(DateTime.now());
+  DateTime _week = mondayOf(DateTime.now());
 
-  String get _weekKey => _dateKey(_week);
+  String get _weekKey => dateKey(_week);
+
+  String get _weekLabel {
+    final locale = Localizations.localeOf(context).toString();
+    final end = DateTime(_week.year, _week.month, _week.day + 6);
+    return '${DateFormat('d MMM', locale).format(_week)} – '
+        '${DateFormat('d MMM', locale).format(end)}';
+  }
 
   void _shiftWeek(int days) {
     setState(() {
@@ -41,11 +50,13 @@ final class _MealsScreenState extends ConsumerState<MealsScreen> {
       appBar: AppBar(title: const Text('Pasti')),
       body: Column(
         children: [
-          _WeekBar(
-            week: _week,
+          PeriodBar(
+            label: _weekLabel,
             onPrevious: () => _shiftWeek(-7),
             onNext: () => _shiftWeek(7),
-            onToday: () => setState(() => _week = _mondayOf(DateTime.now())),
+            onToday: () => setState(() => _week = mondayOf(DateTime.now())),
+            previousTooltip: 'Settimana precedente',
+            nextTooltip: 'Settimana successiva',
           ),
           const Divider(height: 1),
           Expanded(
@@ -96,54 +107,6 @@ final class _MealsScreenState extends ConsumerState<MealsScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _MealEditorDialog.show(context, weekKey: _weekKey),
         child: const Icon(Icons.add),
-      ),
-    );
-  }
-}
-
-final class _WeekBar extends StatelessWidget {
-  const _WeekBar({
-    required this.week,
-    required this.onPrevious,
-    required this.onNext,
-    required this.onToday,
-  });
-
-  final DateTime week;
-  final VoidCallback onPrevious;
-  final VoidCallback onNext;
-  final VoidCallback onToday;
-
-  @override
-  Widget build(BuildContext context) {
-    final locale = Localizations.localeOf(context).toString();
-    final end = DateTime(week.year, week.month, week.day + 6);
-    final label =
-        '${DateFormat('d MMM', locale).format(week)} – '
-        '${DateFormat('d MMM', locale).format(end)}';
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: Row(
-        children: [
-          IconButton(
-            tooltip: 'Settimana precedente',
-            icon: const Icon(Icons.chevron_left),
-            onPressed: onPrevious,
-          ),
-          Expanded(
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ),
-          IconButton(
-            tooltip: 'Settimana successiva',
-            icon: const Icon(Icons.chevron_right),
-            onPressed: onNext,
-          ),
-          TextButton(onPressed: onToday, child: const Text('Oggi')),
-        ],
       ),
     );
   }
@@ -262,7 +225,7 @@ final class _MealEditorDialogState extends ConsumerState<_MealEditorDialog> {
     final navigator = Navigator.of(context);
     final created = await ref
         .read(mealsWeekProvider(widget.weekKey).notifier)
-        .add(date: _dateKey(_date), mealType: _mealType, title: title);
+        .add(date: dateKey(_date), mealType: _mealType, title: title);
     if (!mounted) return;
     if (!created) {
       setState(() => _busy = false);
@@ -326,15 +289,4 @@ final class _MealEditorDialogState extends ConsumerState<_MealEditorDialog> {
       ],
     );
   }
-}
-
-DateTime _mondayOf(DateTime date) {
-  final day = DateTime(date.year, date.month, date.day);
-  return DateTime(day.year, day.month, day.day - (day.weekday - 1));
-}
-
-String _dateKey(DateTime date) {
-  return '${date.year.toString().padLeft(4, '0')}-'
-      '${date.month.toString().padLeft(2, '0')}-'
-      '${date.day.toString().padLeft(2, '0')}';
 }
