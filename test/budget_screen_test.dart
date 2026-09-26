@@ -66,6 +66,16 @@ final class FakeBudgetRepository extends BudgetRepository {
       ),
     ];
   }
+
+  @override
+  Future<BudgetStats> fetchStats(String month) async => const BudgetStats(
+    income: 1000,
+    expenses: -400,
+    balance: 600,
+    prevIncome: 900,
+    prevExpenses: -500,
+    prevBalance: 400,
+  );
 }
 
 Widget _pump(FakeBudgetRepository repo) {
@@ -91,9 +101,9 @@ void main() {
     await tester.pumpWidget(_pump(repo));
     await tester.pumpAndSettle();
 
-    expect(find.text('Entrate'), findsOneWidget);
-    expect(find.text('Uscite'), findsOneWidget);
-    expect(find.text('Saldo'), findsOneWidget);
+    expect(find.text('Entrate'), findsWidgets);
+    expect(find.text('Uscite'), findsWidgets);
+    expect(find.text('Saldo'), findsWidgets);
     expect(find.text('Casa'), findsOneWidget);
 
     final money = NumberFormat.currency(
@@ -102,11 +112,21 @@ void main() {
       decimalDigits: 2,
     );
     expect(find.text(money.format(1000)), findsWidgets);
-    expect(find.text(money.format(-400)), findsWidgets);
+    expect(find.textContaining('1 movimenti in attesa'), findsOneWidget);
+    expect(find.text('Confronto col mese precedente'), findsOneWidget);
+    // Delta entrate: 1000 - 900 = +100.
+    expect(find.text('+${money.format(100)}'), findsWidgets);
 
+    // La lista dei movimenti sta sotto la card di confronto: scorro per
+    // raggiungerla (ListView costruisce i figli su richiesta).
+    await tester.dragUntilVisible(
+      find.text('Spesa'),
+      find.byType(ListView),
+      const Offset(0, -200),
+    );
+    await tester.pumpAndSettle();
     expect(find.text('Stipendio'), findsOneWidget);
     expect(find.text('Spesa'), findsOneWidget);
-    expect(find.textContaining('1 movimenti in attesa'), findsOneWidget);
   });
 
   testWidgets('The next-month button requests another month', (tester) async {

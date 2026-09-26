@@ -37,6 +37,7 @@ final class _BudgetScreenState extends ConsumerState<BudgetScreen> {
   @override
   Widget build(BuildContext context) {
     final data = ref.watch(budgetMonthProvider(_monthKey));
+    final stats = ref.watch(budgetStatsProvider(_monthKey));
     final currency = ref.watch(appPreferencesValueProvider).currency;
 
     return Scaffold(
@@ -57,8 +58,10 @@ final class _BudgetScreenState extends ConsumerState<BudgetScreen> {
             child: RefreshIndicator(
               onRefresh: () async {
                 ref.invalidate(budgetMonthProvider(_monthKey));
+                ref.invalidate(budgetStatsProvider(_monthKey));
                 try {
                   await ref.read(budgetMonthProvider(_monthKey).future);
+                  await ref.read(budgetStatsProvider(_monthKey).future);
                 } catch (_) {
                   // L'errore è già nello stato: niente eccezione sciolta.
                 }
@@ -79,8 +82,12 @@ final class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                 ),
                 data: (data) => _BudgetBody(
                   data: data,
+                  stats: stats.value,
                   currency: currency,
-                  onRetry: () => ref.invalidate(budgetMonthProvider(_monthKey)),
+                  onRetry: () {
+                    ref.invalidate(budgetMonthProvider(_monthKey));
+                    ref.invalidate(budgetStatsProvider(_monthKey));
+                  },
                 ),
               ),
             ),
@@ -137,11 +144,13 @@ final class _MonthBar extends StatelessWidget {
 final class _BudgetBody extends StatelessWidget {
   const _BudgetBody({
     required this.data,
+    required this.stats,
     required this.currency,
     required this.onRetry,
   });
 
   final BudgetMonth data;
+  final BudgetStats? stats;
   final String currency;
   final VoidCallback onRetry;
 
@@ -208,6 +217,10 @@ final class _BudgetBody extends StatelessWidget {
             ),
           ),
         ),
+        if (stats != null) ...[
+          const SizedBox(height: 16),
+          _ComparisonCard(stats: stats!, currency: currency, locale: locale),
+        ],
         if (summary.byCategory.isNotEmpty) ...[
           const SizedBox(height: 16),
           Text('Per categoria', style: Theme.of(context).textTheme.titleSmall),
@@ -333,6 +346,90 @@ final class _CategoryRow extends StatelessWidget {
             value: fraction.clamp(0, 1),
             minHeight: 6,
             borderRadius: BorderRadius.circular(3),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Confronto del mese col precedente (da `GET /budget/stats`).
+final class _ComparisonCard extends StatelessWidget {
+  const _ComparisonCard({
+    required this.stats,
+    required this.currency,
+    required this.locale,
+  });
+
+  final BudgetStats stats;
+  final String currency;
+  final String locale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Confronto col mese precedente',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            _row(
+              context,
+              label: 'Entrate',
+              current: stats.income,
+              previous: stats.prevIncome,
+              lowerIsBetter: false,
+            ),
+            _row(
+              context,
+              label: 'Uscite',
+              current: stats.expenses,
+              previous: stats.prevExpenses,
+              lowerIsBetter: true,
+            ),
+            _row(
+              context,
+              label: 'Saldo',
+              current: stats.balance,
+              previous: stats.prevBalance,
+              lowerIsBetter: false,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _row(
+    BuildContext context, {
+    required String label,
+    required double current,
+    required double previous,
+    required bool lowerIsBetter,
+  }) {
+    final delta = current - previous;
+    final good = lowerIsBetter ? delta <= 0 : delta >= 0;
+    final color = good ? Colors.green : Theme.of(context).colorScheme.error;
+    final sign = delta > 0 ? '+' : '';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Expanded(child: Text(label)),
+          Text(_money(current, currency, locale)),
+          const SizedBox(width: 12),
+          SizedBox(
+            width: 96,
+            child: Text(
+              '$sign${_money(delta, currency, locale)}',
+              textAlign: TextAlign.end,
+              style: TextStyle(color: color),
+            ),
           ),
         ],
       ),

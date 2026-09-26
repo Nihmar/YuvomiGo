@@ -92,3 +92,42 @@ final class BudgetSummary {
 }
 
 bool _asBool(Object? v) => v == true || (v is num && v != 0);
+
+/// `GET /api/v1/budget/stats?range=month&anchor=YYYY-MM-DD` (sottoinsieme).
+final class BudgetStats {
+  const BudgetStats({
+    required this.income,
+    required this.expenses,
+    required this.balance,
+    this.prevIncome = 0,
+    this.prevExpenses = 0,
+    this.prevBalance = 0,
+  });
+
+  final double income;
+  final double expenses;
+  final double balance;
+  final double prevIncome;
+  final double prevExpenses;
+  final double prevBalance;
+
+  factory BudgetStats.fromJson(Map<String, dynamic> json) {
+    final data = json['data'] is Map<String, dynamic>
+        ? json['data'] as Map<String, dynamic>
+        : json;
+    final totals = data['totals'] is Map<String, dynamic>
+        ? data['totals'] as Map<String, dynamic>
+        : const <String, dynamic>{};
+    final comparison = data['comparison'] is Map<String, dynamic>
+        ? data['comparison'] as Map<String, dynamic>
+        : const <String, dynamic>{};
+    return BudgetStats(
+      income: (totals['income'] as num?)?.toDouble() ?? 0,
+      expenses: (totals['expenses'] as num?)?.toDouble() ?? 0,
+      balance: (totals['balance'] as num?)?.toDouble() ?? 0,
+      prevIncome: (comparison['income'] as num?)?.toDouble() ?? 0,
+      prevExpenses: (comparison['expenses'] as num?)?.toDouble() ?? 0,
+      prevBalance: (comparison['balance'] as num?)?.toDouble() ?? 0,
+    );
+  }
+}

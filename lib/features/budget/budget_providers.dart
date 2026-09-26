@@ -24,3 +24,11 @@ final budgetMonthProvider = FutureProvider.family
       final entries = await repo.fetchEntries(month);
       return BudgetMonth(summary: summary, entries: entries);
     });
+
+/// Statistiche del mese (confronto col precedente). Se fallisce, la card
+/// nel screen viene semplicemente omessa.
+final budgetStatsProvider = FutureProvider.family
+    .autoDispose<BudgetStats, String>((ref, month) async {
+      final repo = ref.watch(budgetRepositoryProvider);
+      return repo.fetchStats(month);
+    });

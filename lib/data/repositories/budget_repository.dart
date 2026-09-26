@@ -34,4 +34,15 @@ base class BudgetRepository {
           .toList();
     });
   }
+
+  /// Statistiche del mese + confronto col mese precedente.
+  Future<BudgetStats> fetchStats(String month) {
+    return mapApiErrors(() async {
+      final res = await _api.dio.get<Map<String, dynamic>>(
+        '/api/v1/budget/stats',
+        queryParameters: {'range': 'month', 'anchor': '$month-01'},
+      );
+      return BudgetStats.fromJson(res.data ?? const <String, dynamic>{});
+    });
+  }
 }
