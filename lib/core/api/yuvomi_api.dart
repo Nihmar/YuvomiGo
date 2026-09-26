@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 
 import '../auth/session_manager.dart';
 import 'api_error.dart';
@@ -34,6 +37,7 @@ final class YuvomiApi {
     required String baseUrl,
     required SessionManager sessions,
     Future<void> Function()? onUnauthorized,
+    this.acceptBadCertificates = false,
   }) {
     _sessions = sessions;
     _dio = Dio(
@@ -43,11 +47,26 @@ final class YuvomiApi {
         receiveTimeout: const Duration(seconds: 30),
       ),
     );
+    if (acceptBadCertificates) {
+      // Server self-hosted con certificato self-signed/non fidato: accetta
+      // consapevolmente il certificato. `dart:io` non esiste su web, ma le
+      // piattaforme target sono Android/Windows/Linux.
+      _dio.httpClientAdapter = IOHttpClientAdapter(
+        createHttpClient: () {
+          final client = HttpClient();
+          client.badCertificateCallback = (_, _, _) => true;
+          return client;
+        },
+      );
+    }
     _dio.interceptors.add(
       AuthInterceptor(sessions, onUnauthorized: onUnauthorized),
     );
     _client = gen.YuvomiApiClient(dio: _dio);
   }
+
+  /// Se true, i certificati TLS non riconosciuti vengono accettati.
+  final bool acceptBadCertificates;
 
   late final SessionManager _sessions;
   late final Dio _dio;

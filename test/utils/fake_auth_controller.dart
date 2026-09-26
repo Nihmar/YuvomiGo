@@ -23,6 +23,7 @@ class FakeAuthController extends AuthController {
   String? lastServerUrl;
   String? lastUsername;
   String? lastPassword;
+  bool? lastAcceptBadCertificates;
 
   @override
   AuthState build() => _initial;
@@ -32,11 +33,13 @@ class FakeAuthController extends AuthController {
     required String serverUrl,
     required String username,
     required String password,
+    bool acceptBadCertificates = false,
   }) async {
     loginCalled = true;
     lastServerUrl = serverUrl;
     lastUsername = username;
     lastPassword = password;
+    lastAcceptBadCertificates = acceptBadCertificates;
     state = Authenticated(user: fakeUser());
   }
 

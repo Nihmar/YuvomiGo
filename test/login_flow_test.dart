@@ -28,6 +28,7 @@ final class TimingFakeAuthController extends AuthController {
     required String serverUrl,
     required String username,
     required String password,
+    bool acceptBadCertificates = false,
   }) async {
     state = const AuthLoading();
     await Future<void>.delayed(const Duration(milliseconds: 500));

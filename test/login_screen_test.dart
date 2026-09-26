@@ -137,6 +137,8 @@ void main() {
 
     expect(find.text('Codice'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('Usa un altro account'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Usa un altro account'));
     await tester.pumpAndSettle();
 
@@ -153,5 +155,32 @@ void main() {
       await memory.remember('http://omvnas:4000');
       expect(await memory.read(), 'http://omvnas:4000');
     });
+
+    test('acceptBadCertificates persists as a boolean', () async {
+      final storage = InMemoryStorage();
+      final memory = ServerUrlMemory(storage);
+      expect(await memory.readAcceptBadCertificates(), isFalse);
+      await memory.rememberAcceptBadCertificates(true);
+      expect(await memory.readAcceptBadCertificates(), isTrue);
+    });
+  });
+
+  testWidgets('The self-signed checkbox is passed to the login', (
+    tester,
+  ) async {
+    final controller = FakeAuthController(const AuthUnauthenticated());
+    await _pump(tester, controller);
+
+    await tester.tap(find.byType(Checkbox));
+    await tester.pump();
+
+    final fields = find.byType(EditableText);
+    await tester.enterText(fields.at(0), 'https://nas.local');
+    await tester.enterText(fields.at(1), 'test');
+    await tester.enterText(fields.at(2), 'secret');
+    await tester.tap(find.text('Accedi'));
+    await tester.pumpAndSettle();
+
+    expect(controller.lastAcceptBadCertificates, isTrue);
   });
 }

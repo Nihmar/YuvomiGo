@@ -7,6 +7,7 @@ import 'package:yuvomigo/core/auth/session_manager.dart';
 import 'package:yuvomigo/core/utils/url_utils.dart';
 import 'package:yuvomigo/features/auth/auth_providers.dart';
 import 'package:yuvomigo/features/auth/auth_state.dart';
+import 'package:yuvomigo/features/auth/server_settings.dart';
 
 /// Controller dell'autenticazione: bootstrap, login, 2FA, logout.
 ///
@@ -26,10 +27,15 @@ class AuthController extends Notifier<AuthState> {
   /// Costruisce l'API per [serverUrl] collegando il 401 globale: quando il
   /// server dichiara la sessione scaduta si torna al login, non si resta
   /// bloccati su una schermata di errore.
-  YuvomiApi _buildApi(SessionManager sessions, String serverUrl) {
+  YuvomiApi _buildApi(
+    SessionManager sessions,
+    String serverUrl, {
+    bool acceptBadCertificates = false,
+  }) {
     return YuvomiApi(
       baseUrl: serverUrl,
       sessions: sessions,
+      acceptBadCertificates: acceptBadCertificates,
       onUnauthorized: () => _resetAfterFailure(sessions),
     );
   }
@@ -61,7 +67,19 @@ class AuthController extends Notifier<AuthState> {
       state = const AuthUnauthenticated();
       return;
     }
-    _api = _buildApi(sessions, stored.serverUrl);
+    bool acceptBadCertificates = false;
+    try {
+      acceptBadCertificates = await ref
+          .read(serverUrlMemoryProvider)
+          .readAcceptBadCertificates();
+    } catch (_) {
+      // Storage non disponibile: si prova senza accettare certificati.
+    }
+    _api = _buildApi(
+      sessions,
+      stored.serverUrl,
+      acceptBadCertificates: acceptBadCertificates,
+    );
     try {
       final user = await _api!.me();
       state = Authenticated(user: user);
@@ -79,6 +97,7 @@ class AuthController extends Notifier<AuthState> {
     required String serverUrl,
     required String username,
     required String password,
+    bool acceptBadCertificates = false,
   }) async {
     final sessions = ref.read(sessionManagerProvider);
     try {
@@ -88,7 +107,11 @@ class AuthController extends Notifier<AuthState> {
       // comunque sovrascritta dal login.
     }
     final normalized = normalizeServerUrl(serverUrl);
-    _api = _buildApi(sessions, normalized);
+    _api = _buildApi(
+      sessions,
+      normalized,
+      acceptBadCertificates: acceptBadCertificates,
+    );
     state = const AuthLoading();
     try {
       final result = await _api!.login(username, password);

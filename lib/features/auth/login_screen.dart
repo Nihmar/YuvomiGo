@@ -24,6 +24,7 @@ final class _LoginScreenState extends ConsumerState<LoginScreen> {
   String? _error;
   bool _submitting = false;
   bool _obscurePassword = true;
+  bool _acceptBadCertificates = false;
 
   @override
   void initState() {
@@ -31,15 +32,20 @@ final class _LoginScreenState extends ConsumerState<LoginScreen> {
     _prefillServerUrl();
   }
 
-  /// Precompila l'URL del server usato all'ultimo login.
+  /// Precompila URL del server e preferenza sui certificati self-signed.
   Future<void> _prefillServerUrl() async {
     try {
-      final url = await ref.read(serverUrlMemoryProvider).read();
+      final memory = ref.read(serverUrlMemoryProvider);
+      final url = await memory.read();
+      final acceptBadCertificates = await memory.readAcceptBadCertificates();
       if (mounted && url != null && _urlController.text.isEmpty) {
         _urlController.text = url;
       }
+      if (mounted && acceptBadCertificates) {
+        setState(() => _acceptBadCertificates = true);
+      }
     } catch (_) {
-      // Storage non disponibile: il campo resta vuoto, il login resta usabile.
+      // Storage non disponibile: i campi restano vuoti, il login resta usabile.
     }
   }
 
@@ -65,11 +71,13 @@ final class _LoginScreenState extends ConsumerState<LoginScreen> {
             serverUrl: _urlController.text,
             username: _usernameController.text.trim(),
             password: _passwordController.text,
+            acceptBadCertificates: _acceptBadCertificates,
           );
-      // Login ok (o 2FA): ricordiamo il server per la prossima volta.
-      await ref
-          .read(serverUrlMemoryProvider)
-          .remember(normalizeServerUrl(_urlController.text.trim()));
+      // Login ok (o 2FA): ricordiamo server e preferenza TLS per la prossima
+      // volta.
+      final memory = ref.read(serverUrlMemoryProvider);
+      await memory.remember(normalizeServerUrl(_urlController.text.trim()));
+      await memory.rememberAcceptBadCertificates(_acceptBadCertificates);
       // Su successo il router reindirizza automaticamente a home.
       // Resetto comunque lo spinner: in caso di 2FA si resta su questo
       // screen (form del codice) e il bottone deve restare premibile.
@@ -172,6 +180,18 @@ final class _LoginScreenState extends ConsumerState<LoginScreen> {
                       textInputAction: TextInputAction.next,
                     ),
                     const SizedBox(height: 16),
+                    CheckboxListTile(
+                      value: _acceptBadCertificates,
+                      onChanged: (v) =>
+                          setState(() => _acceptBadCertificates = v ?? false),
+                      title: const Text('Accetta certificati self-signed'),
+                      subtitle: const Text(
+                        'Solo per HTTPS con certificato non riconosciuto',
+                      ),
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                    ),
+                    const SizedBox(height: 8),
                     if (!pending2FA) ...[
                       TextFormField(
                         controller: _usernameController,
