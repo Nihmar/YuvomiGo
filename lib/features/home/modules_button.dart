@@ -23,6 +23,7 @@ final class ModulesButton extends StatelessWidget {
     (path: '/pantry', icon: Icons.kitchen_outlined, label: 'Dispensa'),
     (path: '/waste', icon: Icons.recycling, label: 'Rifiuti'),
     (path: '/documents', icon: Icons.folder_copy_outlined, label: 'Documenti'),
+    (path: '/schedule', icon: Icons.work_outline, label: 'Turni'),
   ];
 
   @override
