@@ -27,6 +27,44 @@ base class NoteRepository {
     });
   }
 
+  /// Crea una categoria [scope] 'personal' o 'household'.
+  Future<NoteCategory> createCategory(
+    String name, {
+    String scope = 'personal',
+  }) {
+    return mapApiErrors(() async {
+      final res = await _api.dio.post<dynamic>(
+        '/api/v1/notes/categories',
+        data: {'name': name, 'scope': scope},
+      );
+      return NoteCategory.fromJson(_noteData(res.data));
+    });
+  }
+
+  Future<NoteCategory> renameCategory(int id, String name) {
+    return mapApiErrors(() async {
+      final res = await _api.dio.put<dynamic>(
+        '/api/v1/notes/categories/$id',
+        data: {'name': name},
+      );
+      return NoteCategory.fromJson(_noteData(res.data));
+    });
+  }
+
+  Future<void> deleteCategory(int id) {
+    return mapApiErrors(
+      () => _api.dio.delete<void>('/api/v1/notes/categories/$id'),
+    );
+  }
+
+  Map<String, dynamic> _noteData(Object? body) {
+    if (body is Map<String, dynamic>) {
+      final data = body['data'];
+      if (data is Map<String, dynamic>) return data;
+    }
+    throw const ApiServerError(200, 'Risposta inattesa dal server.');
+  }
+
   Future<List<Note>> fetchNotes() {
     return mapApiErrors(() async {
       final res = await _api.dio.get<dynamic>('/api/v1/notes');

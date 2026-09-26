@@ -29,13 +29,92 @@ final notesProvider =
       NotesNotifier.new,
     );
 
-/// Categorie delle note (caricate dal dialog di modifica).
-final noteCategoriesProvider = FutureProvider.autoDispose<List<NoteCategory>>((
-  ref,
-) async {
-  final repo = ref.watch(noteRepositoryProvider);
-  return repo.fetchCategories();
-});
+/// Categorie delle note (lista + gestione).
+final noteCategoriesProvider =
+    NotifierProvider.autoDispose<
+      NoteCategoriesNotifier,
+      AsyncValue<List<NoteCategory>>
+    >(NoteCategoriesNotifier.new);
+
+final class NoteCategoriesNotifier
+    extends Notifier<AsyncValue<List<NoteCategory>>> {
+  bool _loading = false;
+
+  @override
+  AsyncValue<List<NoteCategory>> build() {
+    Future.microtask(load);
+    return const AsyncLoading();
+  }
+
+  Future<void> load() => _fetch(showLoading: true);
+
+  Future<void> _fetch({required bool showLoading}) async {
+    if (_loading) return;
+    _loading = true;
+    final repo = ref.read(noteRepositoryProvider);
+    if (showLoading) state = const AsyncLoading();
+    try {
+      final categories = await repo.fetchCategories();
+      if (!ref.mounted) return;
+      state = AsyncData(categories);
+    } catch (e, st) {
+      if (!ref.mounted) return;
+      if (state.hasValue) {
+        ref.read(notesActionErrorProvider.notifier).report(e);
+      } else {
+        state = AsyncError(e, st);
+      }
+    } finally {
+      _loading = false;
+    }
+  }
+
+  /// Crea la categoria; ritorna false se fallisce (dialog aperto).
+  Future<bool> add(String name, {String scope = 'personal'}) async {
+    final repo = ref.read(noteRepositoryProvider);
+    ref.read(notesActionErrorProvider.notifier).clear();
+    try {
+      await repo.createCategory(name, scope: scope);
+      if (!ref.mounted) return true;
+      await _fetch(showLoading: false);
+      return true;
+    } catch (e) {
+      if (!ref.mounted) return false;
+      ref.read(notesActionErrorProvider.notifier).report(e);
+      return false;
+    }
+  }
+
+  Future<bool> rename(int id, String name) async {
+    final repo = ref.read(noteRepositoryProvider);
+    ref.read(notesActionErrorProvider.notifier).clear();
+    try {
+      await repo.renameCategory(id, name);
+      if (!ref.mounted) return true;
+      await _fetch(showLoading: false);
+      ref.invalidate(notesProvider);
+      return true;
+    } catch (e) {
+      if (!ref.mounted) return false;
+      ref.read(notesActionErrorProvider.notifier).report(e);
+      return false;
+    }
+  }
+
+  Future<void> remove(int id) async {
+    final repo = ref.read(noteRepositoryProvider);
+    ref.read(notesActionErrorProvider.notifier).clear();
+    try {
+      await repo.deleteCategory(id);
+      if (!ref.mounted) return;
+      await _fetch(showLoading: false);
+      ref.invalidate(notesProvider);
+    } catch (e) {
+      if (!ref.mounted) return;
+      ref.read(notesActionErrorProvider.notifier).report(e);
+    }
+  }
+}
 
 final class NotesNotifier extends Notifier<AsyncValue<List<Note>>> {
   bool _loading = false;

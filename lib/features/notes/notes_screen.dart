@@ -26,7 +26,15 @@ final class NotesScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Note'),
-        actions: const [ModulesButton(), SettingsButton()],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.label_outline),
+            tooltip: 'Categorie',
+            onPressed: () => _ManageCategoriesDialog.show(context),
+          ),
+          const ModulesButton(),
+          const SettingsButton(),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(notesProvider.notifier).refresh(),
@@ -393,4 +401,196 @@ Color? parseNoteColor(String? hex) {
   final value = int.tryParse(cleaned, radix: 16);
   if (value == null) return null;
   return Color(0xFF000000 | value);
+}
+
+/// Dialog di gestione delle categorie delle note (crea/rinomina/elimina).
+final class _ManageCategoriesDialog extends ConsumerStatefulWidget {
+  const _ManageCategoriesDialog();
+
+  static Future<void> show(BuildContext context) {
+    return showDialog<void>(
+      context: context,
+      builder: (_) => const _ManageCategoriesDialog(),
+    );
+  }
+
+  @override
+  ConsumerState<_ManageCategoriesDialog> createState() =>
+      _ManageCategoriesDialogState();
+}
+
+final class _ManageCategoriesDialogState
+    extends ConsumerState<_ManageCategoriesDialog> {
+  final _name = TextEditingController();
+  String _scope = 'personal';
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  Future<void> _create() async {
+    final name = _name.text.trim();
+    if (name.isEmpty) return;
+    setState(() => _busy = true);
+    final created = await ref
+        .read(noteCategoriesProvider.notifier)
+        .add(name, scope: _scope);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (created) _name.clear();
+  }
+
+  Future<void> _rename(NoteCategory category) async {
+    final controller = TextEditingController(text: category.name);
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Rinomina categoria'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Nome'),
+          onSubmitted: (value) => Navigator.of(dialogContext).pop(value.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(controller.text.trim()),
+            child: const Text('Salva'),
+          ),
+        ],
+      ),
+    );
+    if (newName == null || newName.isEmpty) return;
+    await ref
+        .read(noteCategoriesProvider.notifier)
+        .rename(category.id, newName);
+  }
+
+  Future<void> _delete(NoteCategory category) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Elimina categoria'),
+        content: Text('Vuoi eliminare "${category.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Elimina'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref.read(noteCategoriesProvider.notifier).remove(category.id);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final categories = ref.watch(noteCategoriesProvider);
+    return AlertDialog(
+      title: const Text('Categorie note'),
+      content: SizedBox(
+        width: 380,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _name,
+                      decoration: const InputDecoration(
+                        labelText: 'Nuova categoria',
+                      ),
+                      onSubmitted: (_) => _create(),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Aggiungi',
+                    icon: const Icon(Icons.add),
+                    onPressed: _busy ? null : _create,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: 'personal', label: Text('Personale')),
+                  ButtonSegment(value: 'household', label: Text('Condivisa')),
+                ],
+                selected: {_scope},
+                onSelectionChanged: _busy
+                    ? null
+                    : (selection) => setState(() => _scope = selection.first),
+              ),
+              const SizedBox(height: 12),
+              categories.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => ErrorRetryTile(
+                  message: 'Impossibile caricare le categorie.',
+                  detail: e.toString(),
+                  onRetry: () =>
+                      ref.read(noteCategoriesProvider.notifier).load(),
+                ),
+                data: (list) => Column(
+                  children: [
+                    if (list.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: Text('Nessuna categoria.'),
+                      ),
+                    for (final category in list)
+                      ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(category.name),
+                        subtitle: Text(
+                          category.scope == 'household'
+                              ? 'Condivisa'
+                              : 'Personale',
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              tooltip: 'Rinomina',
+                              icon: const Icon(Icons.edit_outlined),
+                              onPressed: () => _rename(category),
+                            ),
+                            IconButton(
+                              tooltip: 'Elimina',
+                              icon: const Icon(Icons.delete_outline),
+                              onPressed: () => _delete(category),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Chiudi'),
+        ),
+      ],
+    );
+  }
 }

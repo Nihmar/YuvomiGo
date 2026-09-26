@@ -38,7 +38,7 @@ final class FakeNoteRepository extends NoteRepository {
   List<int>? lastCreateCategoryIds;
   List<int>? lastUpdateCategoryIds;
 
-  static const _allCategories = [
+  static const _seedCategories = [
     NoteCategory(id: 1, name: 'Casa', scope: 'household', sortOrder: 0),
     NoteCategory(
       id: 2,
@@ -49,14 +49,52 @@ final class FakeNoteRepository extends NoteRepository {
     ),
   ];
 
+  final List<NoteCategory> categories = [..._seedCategories];
+  final List<String> createdCategories = [];
+  int _nextCategoryId = 50;
+
   @override
   Future<List<Note>> fetchNotes() async => notes.toList();
 
   @override
-  Future<List<NoteCategory>> fetchCategories() async => _allCategories;
+  Future<List<NoteCategory>> fetchCategories() async => categories.toList();
+
+  @override
+  Future<NoteCategory> createCategory(
+    String name, {
+    String scope = 'personal',
+  }) async {
+    final category = NoteCategory(
+      id: _nextCategoryId++,
+      name: name,
+      scope: scope,
+      sortOrder: categories.length,
+    );
+    categories.add(category);
+    createdCategories.add(name);
+    return category;
+  }
+
+  @override
+  Future<NoteCategory> renameCategory(int id, String name) async {
+    final index = categories.indexWhere((c) => c.id == id);
+    final updated = NoteCategory(
+      id: id,
+      name: name,
+      scope: categories[index].scope,
+      sortOrder: categories[index].sortOrder,
+    );
+    categories[index] = updated;
+    return updated;
+  }
+
+  @override
+  Future<void> deleteCategory(int id) async {
+    categories.removeWhere((c) => c.id == id);
+  }
 
   List<NoteCategory> _byIds(List<int>? ids) => [
-    for (final category in _allCategories)
+    for (final category in categories)
       if (ids?.contains(category.id) == true) category,
   ];
 
@@ -247,6 +285,42 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repo.lastCreateCategoryIds, contains(1));
+  });
+
+  testWidgets('Categories can be created from the manager dialog', (
+    tester,
+  ) async {
+    final repo = FakeNoteRepository();
+    await tester.pumpWidget(_pump(const NotesScreen(), repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Categorie'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).first, 'Viaggi');
+    await tester.tap(find.byTooltip('Aggiungi'));
+    await tester.pumpAndSettle();
+
+    expect(repo.createdCategories, ['Viaggi']);
+    expect(find.text('Viaggi'), findsOneWidget);
+  });
+
+  testWidgets('Categories can be deleted from the manager dialog', (
+    tester,
+  ) async {
+    final repo = FakeNoteRepository();
+    await tester.pumpWidget(_pump(const NotesScreen(), repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Categorie'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Elimina').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Elimina'));
+    await tester.pumpAndSettle();
+
+    expect(repo.categories.map((c) => c.name), isNot(contains('Casa')));
   });
 
   test('sortNotesPinnedFirst keeps the relative order', () {

@@ -163,4 +163,48 @@ void main() {
 
     await expectLater(repo.fetchNote(9), throwsA(isA<ApiServerError>()));
   });
+
+  test('createCategory posts name and scope', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('POST', '/api/v1/notes/categories', {
+      'data': {
+        'id': 7,
+        'name': 'Viaggi',
+        'scope': 'household',
+        'sort_order': 2,
+      },
+    });
+    final repo = NoteRepository(apiWith(adapter));
+    final category = await repo.createCategory('Viaggi', scope: 'household');
+
+    expect(category.id, 7);
+    expect(category.name, 'Viaggi');
+    expect(adapter.requests.first.data, {
+      'name': 'Viaggi',
+      'scope': 'household',
+    });
+  });
+
+  test('renameCategory PUTs the name', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('PUT', '/api/v1/notes/categories/7', {
+      'data': {'id': 7, 'name': 'Vacanze', 'scope': 'personal'},
+    });
+    final repo = NoteRepository(apiWith(adapter));
+    final category = await repo.renameCategory(7, 'Vacanze');
+
+    expect(category.name, 'Vacanze');
+    expect(adapter.requests.first.method, 'PUT');
+    expect(adapter.requests.first.data, {'name': 'Vacanze'});
+  });
+
+  test('deleteCategory issues a DELETE', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('DELETE', '/api/v1/notes/categories/7', {});
+    final repo = NoteRepository(apiWith(adapter));
+    await repo.deleteCategory(7);
+
+    expect(adapter.requests.first.method, 'DELETE');
+    expect(adapter.requests.first.path, '/api/v1/notes/categories/7');
+  });
 }
