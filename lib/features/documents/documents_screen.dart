@@ -139,7 +139,16 @@ final class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
   }
 
   Future<void> _pickAndUpload() async {
-    final picked = await ref.read(documentFilePickerProvider).pick();
+    final PickedDocumentFile? picked;
+    try {
+      picked = await ref.read(documentFilePickerProvider).pick();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Selezione del file non riuscita: $e')),
+      );
+      return;
+    }
     if (picked == null || !mounted) return;
     final mimeType = documentMimeForName(picked.name);
     if (mimeType == null) {

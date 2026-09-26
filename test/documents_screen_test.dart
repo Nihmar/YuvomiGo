@@ -85,6 +85,11 @@ final class FakeDocumentFilePicker implements DocumentFilePicker {
   Future<PickedDocumentFile?> pick() async => file;
 }
 
+final class ThrowingDocumentFilePicker implements DocumentFilePicker {
+  @override
+  Future<PickedDocumentFile?> pick() async => throw Exception('boom');
+}
+
 Widget _pump(FakeDocumentRepository repo, {DocumentFilePicker? picker}) {
   return ProviderScope(
     overrides: [
@@ -183,6 +188,22 @@ void main() {
 
     expect(find.textContaining('Tipo di file non supportato'), findsOneWidget);
     expect(repo.uploaded, isEmpty);
+  });
+
+  testWidgets('A picker failure shows a message instead of crashing', (
+    tester,
+  ) async {
+    final repo = FakeDocumentRepository();
+    await tester.pumpWidget(_pump(repo, picker: ThrowingDocumentFilePicker()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Carica documento'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('Selezione del file non riuscita'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('A document can be archived', (tester) async {
