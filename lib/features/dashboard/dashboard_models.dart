@@ -9,6 +9,7 @@ final class DashboardData {
     this.shoppingLists = const [],
     this.shoppingOpenCount,
     this.shoppingOpenLists = 0,
+    this.todayMeals = const [],
   });
 
   /// Prossimi 5 eventi (calendario).
@@ -38,6 +39,9 @@ final class DashboardData {
   /// Numero di liste con articoli aperti.
   final int shoppingOpenLists;
 
+  /// Pasti di oggi (dal widget omonimo del server).
+  final List<DashMeal> todayMeals;
+
   factory DashboardData.fromJson(Map<String, dynamic> json) {
     int? asInt(Object? v) => v is int ? v : (v is num ? v.toInt() : null);
     List<T> asList<T>(Object? v, T Function(Map<String, dynamic>) from) {
@@ -55,6 +59,7 @@ final class DashboardData {
       shoppingLists: asList(json['shoppingLists'], DashShoppingList.fromJson),
       shoppingOpenCount: asInt(json['shoppingOpenCount']),
       shoppingOpenLists: asInt(json['shoppingOpenLists']) ?? 0,
+      todayMeals: asList(json['todayMeals'], DashMeal.fromJson),
     );
   }
 }
@@ -206,6 +211,25 @@ final class DashShoppingItem {
         quantity: json['quantity'] as String?,
         isChecked: _asBool(json['is_checked']),
       );
+}
+
+/// Un pasto di oggi (riga DB `meals`).
+final class DashMeal {
+  const DashMeal({
+    required this.id,
+    required this.mealType,
+    required this.title,
+  });
+
+  final int id;
+  final String mealType;
+  final String title;
+
+  factory DashMeal.fromJson(Map<String, dynamic> json) => DashMeal(
+    id: _asInt(json['id']) ?? -1,
+    mealType: json['meal_type'] as String? ?? '',
+    title: json['title'] as String? ?? '',
+  );
 }
 
 bool _asBool(Object? v) =>

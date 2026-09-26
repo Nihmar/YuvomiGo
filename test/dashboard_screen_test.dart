@@ -15,6 +15,7 @@ final _sample = DashboardData(
   upcomingEvents: [
     DashEvent(id: 1, title: 'Riunione', startDatetime: '2026-09-20T10:00:00'),
   ],
+  todayMeals: [DashMeal(id: 40, mealType: 'lunch', title: 'Pasta al pomodoro')],
   urgentTasks: [
     DashTask(
       id: 10,
@@ -70,6 +71,9 @@ void main() {
     expect(find.textContaining('Latte (2)'), findsOneWidget);
     // Note
     expect(find.text('WIFI'), findsOneWidget);
+    // Pasti
+    expect(find.text('Oggi si mangia'), findsOneWidget);
+    expect(find.text('Pasta al pomodoro'), findsOneWidget);
     // Spesa: una sola lista con articoli aperti → niente conteggio liste.
     expect(find.text('2 articoli'), findsOneWidget);
   });

@@ -7,6 +7,7 @@ import 'package:yuvomigo/features/auth/auth_state.dart';
 import 'package:yuvomigo/features/dashboard/dashboard_models.dart';
 import 'package:yuvomigo/features/dashboard/dashboard_providers.dart';
 import 'package:yuvomigo/features/home/modules_button.dart';
+import 'package:yuvomigo/features/meals/meal_models.dart';
 import 'package:yuvomigo/features/settings/settings_button.dart';
 import 'package:yuvomigo/features/theme/theme_picker_button.dart';
 
@@ -110,6 +111,8 @@ final class _DashboardBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        if (data.todayMeals.isNotEmpty) _MealsTile(meals: data.todayMeals),
+        const SizedBox(height: 16),
         if (data.openTaskCount != null || data.urgentTasks.isNotEmpty)
           _TasksTile(data: data),
         const SizedBox(height: 16),
@@ -153,7 +156,54 @@ final class _DashboardBody extends StatelessWidget {
       d.upcomingEvents.isEmpty &&
       d.shoppingLists.isEmpty &&
       d.shoppingOpenCount == null &&
-      d.pinnedNotes.isEmpty;
+      d.pinnedNotes.isEmpty &&
+      d.todayMeals.isEmpty;
+}
+
+/// Tile "Pasti": cosa si mangia oggi.
+final class _MealsTile extends StatelessWidget {
+  const _MealsTile({required this.meals});
+
+  final List<DashMeal> meals;
+
+  @override
+  Widget build(BuildContext context) {
+    final ordered = [...meals]
+      ..sort(
+        (a, b) =>
+            mealTypeOrder(a.mealType).compareTo(mealTypeOrder(b.mealType)),
+      );
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _TileHeader(
+              icon: Icons.restaurant_menu,
+              title: 'Oggi si mangia',
+            ),
+            const SizedBox(height: 12),
+            for (final meal in ordered)
+              ListTile(
+                dense: true,
+                leading: Icon(_mealIcon(meal.mealType)),
+                title: Text(meal.title),
+                subtitle: Text(mealTypeLabel(meal.mealType)),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _mealIcon(String type) => switch (type) {
+    'breakfast' => Icons.free_breakfast_outlined,
+    'lunch' => Icons.lunch_dining_outlined,
+    'dinner' => Icons.dinner_dining_outlined,
+    'snack' => Icons.cookie_outlined,
+    _ => Icons.restaurant_outlined,
+  };
 }
 
 /// Tile "Task": task urgenti + conteggi.
