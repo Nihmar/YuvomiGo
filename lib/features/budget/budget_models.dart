@@ -94,6 +94,29 @@ final class BudgetSummary {
 bool _asBool(Object? v) => v == true || (v is num && v != 0);
 
 /// `GET /api/v1/budget/stats?range=month&anchor=YYYY-MM-DD` (sottoinsieme).
+/// Un periodo della serie (`series` di `/budget/stats`).
+final class BudgetPeriod {
+  const BudgetPeriod({
+    required this.period,
+    required this.income,
+    required this.expenses,
+    required this.balance,
+  });
+
+  /// 'YYYY-MM' (range mensile/annuale) o 'YYYY-MM-DD' (settimanale).
+  final String period;
+  final double income;
+  final double expenses;
+  final double balance;
+
+  factory BudgetPeriod.fromJson(Map<String, dynamic> json) => BudgetPeriod(
+    period: json['period'] as String? ?? '',
+    income: (json['income'] as num?)?.toDouble() ?? 0,
+    expenses: (json['expenses'] as num?)?.toDouble() ?? 0,
+    balance: (json['balance'] as num?)?.toDouble() ?? 0,
+  );
+}
+
 final class BudgetStats {
   const BudgetStats({
     required this.income,
@@ -102,6 +125,7 @@ final class BudgetStats {
     this.prevIncome = 0,
     this.prevExpenses = 0,
     this.prevBalance = 0,
+    this.series = const [],
   });
 
   final double income;
@@ -110,6 +134,7 @@ final class BudgetStats {
   final double prevIncome;
   final double prevExpenses;
   final double prevBalance;
+  final List<BudgetPeriod> series;
 
   factory BudgetStats.fromJson(Map<String, dynamic> json) {
     final data = json['data'] is Map<String, dynamic>
@@ -121,6 +146,9 @@ final class BudgetStats {
     final comparison = data['comparison'] is Map<String, dynamic>
         ? data['comparison'] as Map<String, dynamic>
         : const <String, dynamic>{};
+    final rawSeries = data['series'] is List
+        ? data['series'] as List
+        : const [];
     return BudgetStats(
       income: (totals['income'] as num?)?.toDouble() ?? 0,
       expenses: (totals['expenses'] as num?)?.toDouble() ?? 0,
@@ -128,6 +156,10 @@ final class BudgetStats {
       prevIncome: (comparison['income'] as num?)?.toDouble() ?? 0,
       prevExpenses: (comparison['expenses'] as num?)?.toDouble() ?? 0,
       prevBalance: (comparison['balance'] as num?)?.toDouble() ?? 0,
+      series: rawSeries
+          .whereType<Map<String, dynamic>>()
+          .map(BudgetPeriod.fromJson)
+          .toList(),
     );
   }
 }

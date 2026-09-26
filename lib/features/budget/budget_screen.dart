@@ -38,6 +38,7 @@ final class _BudgetScreenState extends ConsumerState<BudgetScreen> {
   Widget build(BuildContext context) {
     final data = ref.watch(budgetMonthProvider(_monthKey));
     final stats = ref.watch(budgetStatsProvider(_monthKey));
+    final yearStats = ref.watch(budgetYearStatsProvider(_monthKey));
     final currency = ref.watch(appPreferencesValueProvider).currency;
 
     return Scaffold(
@@ -59,9 +60,11 @@ final class _BudgetScreenState extends ConsumerState<BudgetScreen> {
               onRefresh: () async {
                 ref.invalidate(budgetMonthProvider(_monthKey));
                 ref.invalidate(budgetStatsProvider(_monthKey));
+                ref.invalidate(budgetYearStatsProvider(_monthKey));
                 try {
                   await ref.read(budgetMonthProvider(_monthKey).future);
                   await ref.read(budgetStatsProvider(_monthKey).future);
+                  await ref.read(budgetYearStatsProvider(_monthKey).future);
                 } catch (_) {
                   // L'errore è già nello stato: niente eccezione sciolta.
                 }
@@ -83,10 +86,13 @@ final class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                 data: (data) => _BudgetBody(
                   data: data,
                   stats: stats.value,
+                  yearStats: yearStats.value,
+                  month: _monthKey,
                   currency: currency,
                   onRetry: () {
                     ref.invalidate(budgetMonthProvider(_monthKey));
                     ref.invalidate(budgetStatsProvider(_monthKey));
+                    ref.invalidate(budgetYearStatsProvider(_monthKey));
                   },
                 ),
               ),
@@ -145,12 +151,18 @@ final class _BudgetBody extends StatelessWidget {
   const _BudgetBody({
     required this.data,
     required this.stats,
+    required this.yearStats,
+    required this.month,
     required this.currency,
     required this.onRetry,
   });
 
   final BudgetMonth data;
   final BudgetStats? stats;
+  final BudgetStats? yearStats;
+
+  /// 'YYYY-MM' del mese selezionato (per evidenziarlo nel grafico).
+  final String month;
   final String currency;
   final VoidCallback onRetry;
 
@@ -220,6 +232,15 @@ final class _BudgetBody extends StatelessWidget {
         if (stats != null) ...[
           const SizedBox(height: 16),
           _ComparisonCard(stats: stats!, currency: currency, locale: locale),
+        ],
+        if (yearStats != null && yearStats!.series.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          _YearBarsCard(
+            stats: yearStats!,
+            selectedMonth: month,
+            currency: currency,
+            locale: locale,
+          ),
         ],
         if (summary.byCategory.isNotEmpty) ...[
           const SizedBox(height: 16),
@@ -434,6 +455,110 @@ final class _ComparisonCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Grafico a barre del saldo mensile nell'anno (`/budget/stats?range=year`).
+final class _YearBarsCard extends StatelessWidget {
+  const _YearBarsCard({
+    required this.stats,
+    required this.selectedMonth,
+    required this.currency,
+    required this.locale,
+  });
+
+  final BudgetStats stats;
+  final String selectedMonth;
+  final String currency;
+  final String locale;
+
+  static const _barHeight = 110.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxAbs = stats.series.fold<double>(
+      0,
+      (max, period) => period.balance.abs() > max ? period.balance.abs() : max,
+    );
+    final year = stats.series.first.period.split('-').first;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Andamento $year',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Saldo mensile (verde positivo, rosso negativo)',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: _barHeight + 24,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  for (final period in stats.series)
+                    Expanded(child: _bar(context, period, maxAbs)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _bar(BuildContext context, BudgetPeriod period, double maxAbs) {
+    final fraction = maxAbs == 0 ? 0.0 : period.balance.abs() / maxAbs;
+    final negative = period.balance < 0;
+    final color = negative ? Theme.of(context).colorScheme.error : Colors.green;
+    final selected = period.period == selectedMonth;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 1),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          SizedBox(
+            height: _barHeight,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: FractionallySizedBox(
+                heightFactor: fraction == 0 ? 0.02 : fraction,
+                widthFactor: 0.6,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: selected ? 1 : 0.55),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _monthLabel(period.period),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+              color: selected ? Theme.of(context).colorScheme.primary : null,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _monthLabel(String period) {
+    final date = DateTime.tryParse('$period-01');
+    if (date == null) return period;
+    return DateFormat('MMM', locale).format(date);
   }
 }
 

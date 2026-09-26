@@ -32,3 +32,10 @@ final budgetStatsProvider = FutureProvider.family
       final repo = ref.watch(budgetRepositoryProvider);
       return repo.fetchStats(month);
     });
+
+/// Andamento dell'anno che contiene [month] (serie dei 12 mesi).
+final budgetYearStatsProvider = FutureProvider.family
+    .autoDispose<BudgetStats, String>((ref, month) async {
+      final repo = ref.watch(budgetRepositoryProvider);
+      return repo.fetchStats(month, range: 'year');
+    });

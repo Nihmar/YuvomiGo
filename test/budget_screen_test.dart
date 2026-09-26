@@ -68,14 +68,33 @@ final class FakeBudgetRepository extends BudgetRepository {
   }
 
   @override
-  Future<BudgetStats> fetchStats(String month) async => const BudgetStats(
-    income: 1000,
-    expenses: -400,
-    balance: 600,
-    prevIncome: 900,
-    prevExpenses: -500,
-    prevBalance: 400,
-  );
+  Future<BudgetStats> fetchStats(String month, {String range = 'month'}) async {
+    if (range == 'year') {
+      final year = month.split('-').first;
+      return BudgetStats(
+        income: 12000,
+        expenses: -8000,
+        balance: 4000,
+        series: [
+          for (var m = 1; m <= 12; m++)
+            BudgetPeriod(
+              period: '$year-${m.toString().padLeft(2, '0')}',
+              income: 1000,
+              expenses: -700,
+              balance: m.isEven ? -200 : 300,
+            ),
+        ],
+      );
+    }
+    return const BudgetStats(
+      income: 1000,
+      expenses: -400,
+      balance: 600,
+      prevIncome: 900,
+      prevExpenses: -500,
+      prevBalance: 400,
+    );
+  }
 }
 
 Widget _pump(FakeBudgetRepository repo) {
@@ -104,7 +123,7 @@ void main() {
     expect(find.text('Entrate'), findsWidgets);
     expect(find.text('Uscite'), findsWidgets);
     expect(find.text('Saldo'), findsWidgets);
-    expect(find.text('Casa'), findsOneWidget);
+    expect(find.textContaining('1 movimenti in attesa'), findsOneWidget);
 
     final money = NumberFormat.currency(
       locale: 'en_US',
@@ -112,10 +131,19 @@ void main() {
       decimalDigits: 2,
     );
     expect(find.text(money.format(1000)), findsWidgets);
-    expect(find.textContaining('1 movimenti in attesa'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Confronto col mese precedente'),
+      200,
+    );
+    await tester.pumpAndSettle();
     expect(find.text('Confronto col mese precedente'), findsOneWidget);
     // Delta entrate: 1000 - 900 = +100.
     expect(find.text('+${money.format(100)}'), findsWidgets);
+
+    await tester.scrollUntilVisible(find.text('Casa'), 200);
+    await tester.pumpAndSettle();
+    expect(find.text('Casa'), findsOneWidget);
 
     // La lista dei movimenti sta sotto la card di confronto: scorro per
     // raggiungerla (ListView costruisce i figli su richiesta).
@@ -140,5 +168,19 @@ void main() {
 
     expect(repo.requestedMonths.length, greaterThanOrEqualTo(2));
     expect(repo.requestedMonths.last, isNot(first));
+  });
+
+  testWidgets('Budget screen shows the year trend chart', (tester) async {
+    final repo = FakeBudgetRepository();
+    await tester.pumpWidget(_pump(repo));
+    await tester.pumpAndSettle();
+
+    final year = DateTime.now().year;
+    await tester.scrollUntilVisible(find.text('Andamento $year'), 200);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Andamento $year'), findsOneWidget);
+    // Locale del test MaterialApp = en_US → "Dec".
+    expect(find.text('Dec'), findsOneWidget);
   });
 }

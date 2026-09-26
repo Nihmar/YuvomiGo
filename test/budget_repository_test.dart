@@ -112,25 +112,41 @@ void main() {
     expect(entries[1].isPending, isTrue);
   });
 
-  test('fetchStats parses totals and previous-period comparison', () async {
+  test('fetchStats parses totals, comparison and series', () async {
     final adapter = _RoutingAdapter();
     adapter.addRoute('GET', '/api/v1/budget/stats', {
       'data': {
-        'range': 'month',
-        'from': '2026-09-01',
-        'to': '2026-09-30',
+        'range': 'year',
+        'from': '2026-01-01',
+        'to': '2026-12-31',
         'totals': {'income': 1000, 'expenses': -400, 'balance': 600},
         'comparison': {'income': 900, 'expenses': -500, 'balance': 400},
-        'series': <Object>[],
+        'series': [
+          {
+            'period': '2026-01',
+            'income': 500,
+            'expenses': -100,
+            'balance': 400,
+          },
+          {
+            'period': '2026-02',
+            'income': 500,
+            'expenses': -300,
+            'balance': 200,
+          },
+        ],
         'byCategory': <Object>[],
       },
     });
     final repo = BudgetRepository(apiWith(adapter));
-    final stats = await repo.fetchStats('2026-09');
+    final stats = await repo.fetchStats('2026-09', range: 'year');
 
-    expect(adapter.requests.first.queryParameters['range'], 'month');
+    expect(adapter.requests.first.queryParameters['range'], 'year');
     expect(adapter.requests.first.queryParameters['anchor'], '2026-09-01');
     expect(stats.income, 1000);
     expect(stats.prevExpenses, -500);
+    expect(stats.series, hasLength(2));
+    expect(stats.series.first.period, '2026-01');
+    expect(stats.series.last.balance, 200);
   });
 }
