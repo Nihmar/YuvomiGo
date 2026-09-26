@@ -24,6 +24,7 @@ Backend upstream: https://github.com/ulsklyc/yuvomi — REST API con OpenAPI 3.1
 | Auth | **Cookie session + X-CSRF-Token** (come il web) | `POST /auth/login` crea la sessione (cookie `yuvomi.sid`); le state-changing requests mandano `X-CSRF-Token`. I Bearer API token si creano solo da admin (`POST /auth/api-tokens`), non generalizzabile. 2FA opzionale: login risponde `twoFactorRequired` → `POST /auth/2fa/verify` |
 | Login / connessione | **Screen login con 3 campi: URL server, username, password** | Il collegamento deve funzionare sia con **http** che con **https**; l'URL inserito viene persistito (settings) e riusato ai login successivi |
 | Test | **Test per ogni feature**; `flutter test` + `flutter analyze` prima di ogni commit | Widget test + provider tests |
+| Repo git | **Root del workspace** | `app/` è una sottocartella; `scripts/.env` e `reference/` in `.gitignore`; CI in `.github/workflows/ci.yml` con `working-directory: app` |
 
 ### Dipendenze (versioni di riferimento, da confermare con `flutter pub outdated`)
 | Package | Versione | Tipo |

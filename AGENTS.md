@@ -6,6 +6,8 @@ Contiene sia il riferimento upstream sia l'app.
 Percorso workspace: /home/alessandro/Projects/YuvomiGo/
 
 ## Struttura
+- **Repository git: root del workspace** (`.git/` qui). `PLAN.md`, `AGENTS.md`, `scripts/` e `app/`
+  sono versionati; `reference/` e `scripts/.env` sono in `.gitignore` (mai committarli).
 - `reference/` — snapshot READ-ONLY delle release upstream di Yuvomi.
   - `reference/<tag>/` — contenuto di una release
   - `reference/current` — symlink alla release in uso
@@ -18,6 +20,7 @@ Percorso workspace: /home/alessandro/Projects/YuvomiGo/
   - `app/test/` — test (widget + provider); una feature senza test non è completa
 - `scripts/` — script di aggiornamento
   - `scripts/.env` — credenziali del server (token admin in chiaro; **mai committare in git**)
+- `.github/workflows/ci.yml` — CI (format + analyze + test), esegue in `app/` (`working-directory`)
 - `PLAN.md` — piano di sviluppo e decisioni prese
 
 ## Piattaforme target
