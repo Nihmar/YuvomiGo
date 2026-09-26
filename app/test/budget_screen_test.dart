@@ -26,6 +26,29 @@ final class FakeBudgetRepository extends BudgetRepository {
       );
 
   final List<String> requestedMonths = [];
+  final List<String> created = [];
+  final List<String> updated = [];
+  final List<int> deleted = [];
+  final List<int> confirmed = [];
+  int _nextId = 100;
+
+  final List<BudgetEntry> entries = [
+    const BudgetEntry(
+      id: 1,
+      title: 'Stipendio',
+      amount: 1000,
+      date: '2026-09-01',
+      category: 'Lavoro',
+    ),
+    const BudgetEntry(
+      id: 2,
+      title: 'Spesa',
+      amount: -400,
+      date: '2026-09-03',
+      category: 'Alimentari',
+      isPending: true,
+    ),
+  ];
 
   @override
   Future<BudgetSummary> fetchSummary(String month) async {
@@ -48,23 +71,74 @@ final class FakeBudgetRepository extends BudgetRepository {
   }
 
   @override
-  Future<List<BudgetEntry>> fetchEntries(String month) async {
-    return const [
-      BudgetEntry(
-        id: 1,
-        title: 'Stipendio',
-        amount: 1000,
-        date: '2026-09-01',
-        category: 'Lavoro',
-      ),
-      BudgetEntry(
-        id: 2,
-        title: 'Spesa',
-        amount: -400,
-        date: '2026-09-03',
-        category: 'Alimentari',
-      ),
-    ];
+  Future<List<BudgetEntry>> fetchEntries(String month) async =>
+      entries.toList();
+
+  @override
+  Future<List<BudgetCategory>> fetchCategories() async => const [
+    BudgetCategory(key: 'Alimentari', name: 'Alimentari', type: 'expense'),
+    BudgetCategory(key: 'Lavoro', name: 'Lavoro', type: 'income'),
+  ];
+
+  @override
+  Future<BudgetEntry> createEntry({
+    required String title,
+    required double amount,
+    required String category,
+    required String date,
+  }) async {
+    created.add(title);
+    final entry = BudgetEntry(
+      id: _nextId++,
+      title: title,
+      amount: amount,
+      date: date,
+      category: category,
+    );
+    entries.add(entry);
+    return entry;
+  }
+
+  @override
+  Future<BudgetEntry> updateEntry(
+    int id, {
+    String? title,
+    double? amount,
+    String? category,
+    String? date,
+  }) async {
+    updated.add(title ?? '');
+    final index = entries.indexWhere((e) => e.id == id);
+    final entry = BudgetEntry(
+      id: id,
+      title: title ?? entries[index].title,
+      amount: amount ?? entries[index].amount,
+      date: date ?? entries[index].date,
+      category: category ?? entries[index].category,
+      isPending: entries[index].isPending,
+    );
+    entries[index] = entry;
+    return entry;
+  }
+
+  @override
+  Future<void> deleteEntry(int id) async {
+    deleted.add(id);
+    entries.removeWhere((e) => e.id == id);
+  }
+
+  @override
+  Future<void> confirmEntry(int id) async {
+    confirmed.add(id);
+    final index = entries.indexWhere((e) => e.id == id);
+    final entry = entries[index];
+    entries[index] = BudgetEntry(
+      id: entry.id,
+      title: entry.title,
+      amount: entry.amount,
+      date: entry.date,
+      category: entry.category,
+    );
   }
 
   @override
@@ -155,6 +229,82 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Stipendio'), findsOneWidget);
     expect(find.text('Spesa'), findsOneWidget);
+  });
+
+  testWidgets('A new movement can be added as an expense', (tester) async {
+    final repo = FakeBudgetRepository();
+    await tester.pumpWidget(_pump(repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Aggiungi movimento'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).at(0), 'Benzina');
+    await tester.enterText(find.byType(TextField).at(1), '55,50');
+    await tester.tap(find.text('Salva'));
+    await tester.pumpAndSettle();
+
+    expect(repo.created, ['Benzina']);
+    final entry = repo.entries.firstWhere((e) => e.title == 'Benzina');
+    expect(entry.amount, -55.5); // default: Uscita
+  });
+
+  testWidgets('Tapping a movement opens the editor and saves changes', (
+    tester,
+  ) async {
+    final repo = FakeBudgetRepository();
+    await tester.pumpWidget(_pump(repo));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('Stipendio'), 200);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Stipendio'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).at(0), 'Stipendio settembre');
+    await tester.tap(find.text('Salva'));
+    await tester.pumpAndSettle();
+
+    expect(repo.updated, ['Stipendio settembre']);
+    expect(find.text('Stipendio settembre'), findsOneWidget);
+  });
+
+  testWidgets('A pending movement can be confirmed', (tester) async {
+    final repo = FakeBudgetRepository();
+    await tester.pumpWidget(_pump(repo));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('Spesa'), 200);
+    await tester.pumpAndSettle();
+    final spesaTile = find.ancestor(
+      of: find.text('Spesa'),
+      matching: find.byType(ListTile),
+    );
+    await tester.tap(
+      find.descendant(
+        of: spesaTile,
+        matching: find.byType(PopupMenuButton<String>),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Conferma'));
+    await tester.pumpAndSettle();
+
+    expect(repo.confirmed, [2]);
+  });
+
+  testWidgets('A movement can be deleted', (tester) async {
+    final repo = FakeBudgetRepository();
+    await tester.pumpWidget(_pump(repo));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('Stipendio'), 200);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(PopupMenuButton<String>).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Elimina'));
+    await tester.pumpAndSettle();
+
+    expect(repo.deleted, [1]);
+    expect(repo.entries.map((e) => e.title), isNot(contains('Stipendio')));
   });
 
   testWidgets('The next-month button requests another month', (tester) async {

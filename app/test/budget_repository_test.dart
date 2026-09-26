@@ -149,4 +149,78 @@ void main() {
     expect(stats.series.first.period, '2026-01');
     expect(stats.series.last.balance, 200);
   });
+
+  test('fetchCategories parses the list', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('GET', '/api/v1/budget/categories', {
+      'data': [
+        {'key': 'Alimentari', 'name': 'Alimentari', 'type': 'expense'},
+        {'key': 'Lavoro', 'name': 'Lavoro', 'type': 'income'},
+      ],
+      'lang': 'de',
+    });
+    final repo = BudgetRepository(apiWith(adapter));
+    final categories = await repo.fetchCategories();
+
+    expect(categories, hasLength(2));
+    expect(categories.first.key, 'Alimentari');
+    expect(categories.first.type, 'expense');
+    expect(categories.last.type, 'income');
+  });
+
+  test('createEntry posts title, signed amount, category and date', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('POST', '/api/v1/budget', {
+      'data': {
+        'id': 9,
+        'title': 'Spesa',
+        'amount': -42.5,
+        'category': 'Alimentari',
+        'date': '2026-09-10',
+      },
+    });
+    final repo = BudgetRepository(apiWith(adapter));
+    final created = await repo.createEntry(
+      title: 'Spesa',
+      amount: -42.5,
+      category: 'Alimentari',
+      date: '2026-09-10',
+    );
+
+    expect(created.id, 9);
+    expect(adapter.requests.first.data, {
+      'title': 'Spesa',
+      'amount': -42.5,
+      'category': 'Alimentari',
+      'date': '2026-09-10',
+    });
+  });
+
+  test('updateEntry PUTs only the provided fields', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('PUT', '/api/v1/budget/9', {
+      'data': {'id': 9, 'title': 'Spesa', 'amount': -50},
+    });
+    final repo = BudgetRepository(apiWith(adapter));
+    await repo.updateEntry(9, amount: -50);
+
+    expect(adapter.requests.first.method, 'PUT');
+    expect(adapter.requests.first.path, '/api/v1/budget/9');
+    expect(adapter.requests.first.data, {'amount': -50.0});
+  });
+
+  test('deleteEntry and confirmEntry call the right endpoints', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('DELETE', '/api/v1/budget/9', {});
+    adapter.addRoute('PATCH', '/api/v1/budget/9/confirm', {});
+    final repo = BudgetRepository(apiWith(adapter));
+
+    await repo.deleteEntry(9);
+    expect(adapter.requests.last.method, 'DELETE');
+    expect(adapter.requests.last.path, '/api/v1/budget/9');
+
+    await repo.confirmEntry(9);
+    expect(adapter.requests.last.method, 'PATCH');
+    expect(adapter.requests.last.path, '/api/v1/budget/9/confirm');
+  });
 }

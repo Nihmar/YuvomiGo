@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:yuvomigo/core/utils/date_utils.dart';
 import 'package:yuvomigo/core/widgets/error_retry_tile.dart';
 import 'package:yuvomigo/core/widgets/period_bar.dart';
 import 'package:yuvomigo/features/budget/budget_models.dart';
@@ -41,6 +42,13 @@ final class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     final stats = ref.watch(budgetStatsProvider(_monthKey));
     final yearStats = ref.watch(budgetYearStatsProvider(_monthKey));
     final currency = ref.watch(appPreferencesValueProvider).currency;
+    ref.listen<Object?>(budgetActionErrorProvider, (_, err) {
+      if (err != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Operazione non riuscita: $err')),
+        );
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(title: const Text('Budget')),
@@ -103,11 +111,16 @@ final class _BudgetScreenState extends ConsumerState<BudgetScreen> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        tooltip: 'Aggiungi movimento',
+        onPressed: () => _BudgetEntryDialog.show(context),
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }
 
-final class _BudgetBody extends StatelessWidget {
+final class _BudgetBody extends ConsumerWidget {
   const _BudgetBody({
     required this.data,
     required this.stats,
@@ -127,7 +140,7 @@ final class _BudgetBody extends StatelessWidget {
   final VoidCallback onRetry;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final summary = data.summary;
     final scheme = Theme.of(context).colorScheme;
     final locale = Localizations.localeOf(context).toString();
@@ -138,7 +151,8 @@ final class _BudgetBody extends StatelessWidget {
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16),
+      // Spazio in fondo per non lasciare l'ultimo movimento sotto la FAB.
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
       children: [
         Card(
           child: Padding(
@@ -236,14 +250,49 @@ final class _BudgetBody extends StatelessWidget {
                 entry.amount >= 0 ? Icons.south_west : Icons.north_east,
                 color: entry.amount >= 0 ? Colors.green : scheme.error,
               ),
-              title: Text(entry.title),
+              title: Row(
+                children: [
+                  Expanded(child: Text(entry.title)),
+                  Text(
+                    _money(entry.amount, currency, locale),
+                    style: TextStyle(
+                      color: entry.amount >= 0 ? Colors.green : scheme.error,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
               subtitle: Text(_entrySubtitle(entry, locale)),
-              trailing: Text(
-                _money(entry.amount, currency, locale),
-                style: TextStyle(
-                  color: entry.amount >= 0 ? Colors.green : scheme.error,
-                  fontWeight: FontWeight.w600,
-                ),
+              onTap: () => _BudgetEntryDialog.show(context, entry: entry),
+              trailing: PopupMenuButton<String>(
+                tooltip: 'Azioni movimento',
+                onSelected: (value) {
+                  final actions = ref.read(budgetActionsProvider);
+                  if (value == 'confirm') {
+                    actions.confirm(entry.id);
+                  } else if (value == 'delete') {
+                    actions.remove(entry.id);
+                  }
+                },
+                itemBuilder: (menuContext) => [
+                  if (entry.isPending)
+                    const PopupMenuItem(
+                      value: 'confirm',
+                      child: ListTile(
+                        leading: Icon(Icons.check_circle_outline),
+                        title: Text('Conferma'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: ListTile(
+                      leading: Icon(Icons.delete_outline),
+                      title: Text('Elimina'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                ],
               ),
             ),
       ],
@@ -528,4 +577,198 @@ String _money(double amount, String currency, String locale) {
     name: currency,
     decimalDigits: 2,
   ).format(amount);
+}
+
+/// Dialog per creare/modificare un movimento.
+final class _BudgetEntryDialog extends ConsumerStatefulWidget {
+  const _BudgetEntryDialog({this.entry});
+
+  final BudgetEntry? entry;
+
+  static Future<void> show(BuildContext context, {BudgetEntry? entry}) {
+    return showDialog<void>(
+      context: context,
+      builder: (_) => _BudgetEntryDialog(entry: entry),
+    );
+  }
+
+  @override
+  ConsumerState<_BudgetEntryDialog> createState() => _BudgetEntryDialogState();
+}
+
+final class _BudgetEntryDialogState extends ConsumerState<_BudgetEntryDialog> {
+  final _title = TextEditingController();
+  final _amount = TextEditingController();
+  bool _isExpense = true;
+  String? _category;
+  DateTime _date = DateTime.now();
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final entry = widget.entry;
+    if (entry == null) return;
+    _title.text = entry.title;
+    _amount.text = entry.amount.abs() == entry.amount.abs().roundToDouble()
+        ? entry.amount.abs().round().toString()
+        : entry.amount.abs().toStringAsFixed(2);
+    _isExpense = entry.amount < 0;
+    _category = entry.category.isEmpty ? null : entry.category;
+    _date = DateTime.tryParse(entry.date) ?? _date;
+  }
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _amount.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _date,
+      firstDate: DateTime(now.year - 5),
+      lastDate: DateTime(now.year + 5),
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _date = picked);
+  }
+
+  Future<void> _save() async {
+    final title = _title.text.trim();
+    final value = double.tryParse(_amount.text.trim().replaceAll(',', '.'));
+    if (title.isEmpty || value == null || value <= 0) return;
+    final amount = _isExpense ? -value.abs() : value.abs();
+    setState(() => _busy = true);
+    final navigator = Navigator.of(context);
+    final actions = ref.read(budgetActionsProvider);
+    final entry = widget.entry;
+    final category = _category ?? '';
+    final success = entry == null
+        ? await actions.add(
+            title: title,
+            amount: amount,
+            category: category,
+            date: dateKey(_date),
+          )
+        : await actions.update(
+            entry.id,
+            title: title,
+            amount: amount,
+            category: category,
+            date: dateKey(_date),
+          );
+    if (!mounted) return;
+    if (!success) {
+      setState(() => _busy = false);
+      return;
+    }
+    navigator.pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final categories =
+        ref.watch(budgetCategoriesProvider).value ?? const <BudgetCategory>[];
+    final wantedType = _isExpense ? 'expense' : 'income';
+    final visible = categories.where((c) => c.type == wantedType).toList();
+    // La categoria salvata può non essere (più) in lista: la aggiungo per non
+    // perderla e per non far fallire il dropdown.
+    final selected = _category == null || _category!.isEmpty
+        ? null
+        : visible.any((c) => c.key == _category)
+        ? _category
+        : '';
+
+    return AlertDialog(
+      title: Text(
+        widget.entry == null ? 'Nuovo movimento' : 'Modifica movimento',
+      ),
+      content: SizedBox(
+        width: 380,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(value: true, label: Text('Uscita')),
+                  ButtonSegment(value: false, label: Text('Entrata')),
+                ],
+                selected: {_isExpense},
+                onSelectionChanged: _busy
+                    ? null
+                    : (selection) =>
+                          setState(() => _isExpense = selection.first),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _title,
+                autofocus: true,
+                decoration: const InputDecoration(labelText: 'Titolo'),
+                textInputAction: TextInputAction.next,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _amount,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(labelText: 'Importo'),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                isExpanded: true,
+                initialValue: selected,
+                decoration: const InputDecoration(labelText: 'Categoria'),
+                items: [
+                  if (selected == '')
+                    DropdownMenuItem(
+                      value: '',
+                      child: Text(_category ?? 'Categoria'),
+                    ),
+                  for (final category in visible)
+                    DropdownMenuItem(
+                      value: category.key,
+                      child: Text(category.name),
+                    ),
+                ],
+                onChanged: _busy
+                    ? null
+                    : (value) => setState(() => _category = value),
+              ),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: _busy ? null : _pickDate,
+                  icon: const Icon(Icons.event),
+                  label: Text(DateFormat('d MMMM yyyy').format(_date)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _busy ? null : () => Navigator.of(context).pop(),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: _busy ? null : _save,
+          child: _busy
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Salva'),
+        ),
+      ],
+    );
+  }
 }

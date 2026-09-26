@@ -93,6 +93,27 @@ final class BudgetSummary {
 
 bool _asBool(Object? v) => v == true || (v is num && v != 0);
 
+/// Una categoria di budget (server: `GET /budget/categories`).
+final class BudgetCategory {
+  const BudgetCategory({
+    required this.key,
+    required this.name,
+    required this.type,
+  });
+
+  final String key;
+  final String name;
+
+  /// 'income' o 'expense'.
+  final String type;
+
+  factory BudgetCategory.fromJson(Map<String, dynamic> json) => BudgetCategory(
+    key: json['key'] as String? ?? '',
+    name: json['name'] as String? ?? '',
+    type: json['type'] as String? ?? 'expense',
+  );
+}
+
 /// `GET /api/v1/budget/stats?range=month&anchor=YYYY-MM-DD` (sottoinsieme).
 /// Un periodo della serie (`series` di `/budget/stats`).
 final class BudgetPeriod {

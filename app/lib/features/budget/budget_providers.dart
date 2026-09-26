@@ -39,3 +39,110 @@ final budgetYearStatsProvider = FutureProvider.family
       final repo = ref.watch(budgetRepositoryProvider);
       return repo.fetchStats(month, range: 'year');
     });
+
+/// Ultimo errore di un'azione sui movimenti (SnackBar).
+final budgetActionErrorProvider =
+    NotifierProvider<BudgetActionErrorNotifier, Object?>(
+      BudgetActionErrorNotifier.new,
+    );
+
+final class BudgetActionErrorNotifier extends Notifier<Object?> {
+  @override
+  Object? build() => null;
+
+  void clear() => state = null;
+  void report(Object error) => state = error;
+}
+
+/// Categorie per il form dei movimenti.
+final budgetCategoriesProvider =
+    FutureProvider.autoDispose<List<BudgetCategory>>((ref) async {
+      final repo = ref.watch(budgetRepositoryProvider);
+      return repo.fetchCategories();
+    });
+
+/// Azioni di scrittura sui movimenti: dopo ognuna le viste si ricaricano.
+final budgetActionsProvider = Provider<BudgetActions>(BudgetActions.new);
+
+final class BudgetActions {
+  BudgetActions(this._ref);
+
+  final Ref _ref;
+
+  void _reload() {
+    _ref.invalidate(budgetMonthProvider);
+    _ref.invalidate(budgetStatsProvider);
+    _ref.invalidate(budgetYearStatsProvider);
+  }
+
+  /// Crea il movimento; false se fallisce (dialog aperto).
+  Future<bool> add({
+    required String title,
+    required double amount,
+    required String category,
+    required String date,
+  }) async {
+    final repo = _ref.read(budgetRepositoryProvider);
+    _ref.read(budgetActionErrorProvider.notifier).clear();
+    try {
+      await repo.createEntry(
+        title: title,
+        amount: amount,
+        category: category,
+        date: date,
+      );
+      _reload();
+      return true;
+    } catch (e) {
+      _ref.read(budgetActionErrorProvider.notifier).report(e);
+      return false;
+    }
+  }
+
+  Future<bool> update(
+    int id, {
+    required String title,
+    required double amount,
+    required String category,
+    required String date,
+  }) async {
+    final repo = _ref.read(budgetRepositoryProvider);
+    _ref.read(budgetActionErrorProvider.notifier).clear();
+    try {
+      await repo.updateEntry(
+        id,
+        title: title,
+        amount: amount,
+        category: category,
+        date: date,
+      );
+      _reload();
+      return true;
+    } catch (e) {
+      _ref.read(budgetActionErrorProvider.notifier).report(e);
+      return false;
+    }
+  }
+
+  Future<void> remove(int id) async {
+    final repo = _ref.read(budgetRepositoryProvider);
+    _ref.read(budgetActionErrorProvider.notifier).clear();
+    try {
+      await repo.deleteEntry(id);
+      _reload();
+    } catch (e) {
+      _ref.read(budgetActionErrorProvider.notifier).report(e);
+    }
+  }
+
+  Future<void> confirm(int id) async {
+    final repo = _ref.read(budgetRepositoryProvider);
+    _ref.read(budgetActionErrorProvider.notifier).clear();
+    try {
+      await repo.confirmEntry(id);
+      _reload();
+    } catch (e) {
+      _ref.read(budgetActionErrorProvider.notifier).report(e);
+    }
+  }
+}

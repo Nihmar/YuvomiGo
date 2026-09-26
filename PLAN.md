@@ -163,8 +163,10 @@ Test: 130 verdi, `flutter analyze` pulito.
   - [x] **Compleanni**: lista ordinata per prossimo compleanno con countdown/età, creazione,
         modifica, eliminazione
   - [x] **Promemoria**: in scadenza dal server, con "fatto" (dismiss) ed eliminazione
-  - [x] **Budget** (sola lettura): mese con navigazione, entrate/uscite/saldo, totali per categoria,
-        lista movimenti, confronto col mese precedente (`/budget/stats`); valuta dalle preferenze del server
+  - [x] **Budget**: mese con navigazione, entrate/uscite/saldo, totali per categoria,
+        confronto col mese precedente e grafico dell'anno (`/budget/stats`); valuta dalle preferenze;
+        **movimenti in scrittura**: crea/modifica (entrata o uscita, categoria, data), elimina e
+        conferma quelli in attesa
   - [x] **Ricette** (sola lettura): elenco con ricerca, dettaglio con ingredienti/note/fonte
   - [x] **Inventario**: oggetti con ricerca, categoria/posizione, prezzo/garanzia e date tracciate;
         creazione, modifica (PUT completo) ed eliminazione con conferma
