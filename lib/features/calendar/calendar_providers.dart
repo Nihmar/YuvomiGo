@@ -9,6 +9,20 @@ final calendarRepositoryProvider = Provider<CalendarRepository>((ref) {
   return CalendarRepository(api);
 });
 
+/// Ultimo errore di un refresh con dati validi a schermo (SnackBar).
+final calendarActionErrorProvider =
+    NotifierProvider<CalendarActionErrorNotifier, Object?>(
+      CalendarActionErrorNotifier.new,
+    );
+
+final class CalendarActionErrorNotifier extends Notifier<Object?> {
+  @override
+  Object? build() => null;
+
+  void clear() => state = null;
+  void report(Object error) => state = error;
+}
+
 final calendarEventsProvider =
     NotifierProvider.autoDispose<
       CalendarEventsNotifier,
@@ -25,13 +39,27 @@ final class CalendarEventsNotifier
     return const AsyncLoading();
   }
 
-  Future<void> load() async {
+  Future<void> load() => _fetch(showLoading: true);
+
+  /// Ricarica mantenendo gli eventi correnti (pull-to-refresh).
+  Future<void> refresh() => _fetch(showLoading: false);
+
+  Future<void> _fetch({required bool showLoading}) async {
     if (_loading) return;
     _loading = true;
     final repo = ref.read(calendarRepositoryProvider);
+    if (showLoading) state = const AsyncLoading();
     try {
-      state = const AsyncLoading();
-      state = await AsyncValue.guard(() => repo.fetchRange(_from(), _to()));
+      final events = await repo.fetchRange(_from(), _to());
+      if (!ref.mounted) return;
+      state = AsyncData(events);
+    } catch (e, st) {
+      if (!ref.mounted) return;
+      if (state.hasValue) {
+        ref.read(calendarActionErrorProvider.notifier).report(e);
+      } else {
+        state = AsyncError(e, st);
+      }
     } finally {
       _loading = false;
     }

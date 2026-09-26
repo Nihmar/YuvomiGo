@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:yuvomigo/core/widgets/error_retry_tile.dart';
 import 'package:yuvomigo/features/shopping/shopping_providers.dart';
 
 /// Dettaglio di una lista di spesa: articoli + azioni.
@@ -7,6 +8,8 @@ final class ShoppingListDetailScreen extends ConsumerWidget {
   const ShoppingListDetailScreen({super.key, required this.listId});
 
   final int listId;
+
+  static const _scrollPhysics = AlwaysScrollableScrollPhysics();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,87 +37,75 @@ final class ShoppingListDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(listName ?? 'Articoli')),
-      body: items.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Card(
-              color: Theme.of(context).colorScheme.errorContainer,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Impossibile caricare gli articoli.',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onErrorContainer,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      e.toString(),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onErrorContainer,
-                      ),
-                    ),
-                  ],
-                ),
+      body: RefreshIndicator(
+        onRefresh: () =>
+            ref.read(shoppingItemsProvider(listId).notifier).refresh(),
+        child: items.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => ListView(
+            physics: _scrollPhysics,
+            padding: const EdgeInsets.all(16),
+            children: [
+              ErrorRetryTile(
+                message: 'Impossibile caricare gli articoli.',
+                detail: e.toString(),
+                onRetry: () =>
+                    ref.read(shoppingItemsProvider(listId).notifier).load(),
               ),
-            ),
-          ],
-        ),
-        data: (items) {
-          if (items.isEmpty) {
-            return ListView(
-              padding: const EdgeInsets.all(24),
-              children: [
-                Text(
-                  'Nessun articolo.\nUsa "Aggiungi" per aggiungerne uno.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ],
-            );
-          }
-          return ListView.builder(
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              final label = item.quantity == null || item.quantity!.isEmpty
-                  ? item.name
-                  : '${item.name} (${item.quantity})';
-              return ListTile(
-                leading: Checkbox(
-                  value: item.isChecked,
-                  onChanged: (v) => ref
-                      .read(shoppingItemsProvider(listId).notifier)
-                      .toggle(item.id, v ?? false),
-                ),
-                title: Text(
-                  label,
-                  style: TextStyle(
-                    decoration: item.isChecked
-                        ? TextDecoration.lineThrough
-                        : null,
-                    color: item.isChecked
-                        ? Theme.of(context).textTheme.bodySmall?.color
-                        : null,
+            ],
+          ),
+          data: (items) {
+            if (items.isEmpty) {
+              return ListView(
+                physics: _scrollPhysics,
+                padding: const EdgeInsets.all(24),
+                children: [
+                  Text(
+                    'Nessun articolo.\nUsa "Aggiungi" per aggiungerne uno.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  tooltip: 'Elimina',
-                  onPressed: () => ref
-                      .read(shoppingItemsProvider(listId).notifier)
-                      .remove(item.id),
-                ),
+                ],
               );
-            },
-          );
-        },
+            }
+            return ListView.builder(
+              physics: _scrollPhysics,
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+                final label = item.quantity == null || item.quantity!.isEmpty
+                    ? item.name
+                    : '${item.name} (${item.quantity})';
+                return ListTile(
+                  leading: Checkbox(
+                    value: item.isChecked,
+                    onChanged: (v) => ref
+                        .read(shoppingItemsProvider(listId).notifier)
+                        .toggle(item.id, v ?? false),
+                  ),
+                  title: Text(
+                    label,
+                    style: TextStyle(
+                      decoration: item.isChecked
+                          ? TextDecoration.lineThrough
+                          : null,
+                      color: item.isChecked
+                          ? Theme.of(context).textTheme.bodySmall?.color
+                          : null,
+                    ),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: 'Elimina',
+                    onPressed: () => ref
+                        .read(shoppingItemsProvider(listId).notifier)
+                        .remove(item.id),
+                  ),
+                );
+              },
+            );
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _promptForItem(context, ref),

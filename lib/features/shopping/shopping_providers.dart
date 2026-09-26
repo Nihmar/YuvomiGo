@@ -41,13 +41,27 @@ class ShoppingListsNotifier extends Notifier<AsyncValue<List<ShoppingList>>> {
     return const AsyncLoading();
   }
 
-  Future<void> load() async {
+  Future<void> load() => _fetch(showLoading: true);
+
+  /// Ricarica mantenendo le liste correnti (pull-to-refresh).
+  Future<void> refresh() => _fetch(showLoading: false);
+
+  Future<void> _fetch({required bool showLoading}) async {
     if (_loading) return;
     _loading = true;
     final repo = ref.read(shoppingRepositoryProvider);
+    if (showLoading) state = const AsyncLoading();
     try {
-      state = const AsyncLoading();
-      state = await AsyncValue.guard(() => repo.fetchLists());
+      final lists = await repo.fetchLists();
+      if (!ref.mounted) return;
+      state = AsyncData(lists);
+    } catch (e, st) {
+      if (!ref.mounted) return;
+      if (state.hasValue) {
+        _errors(ref).report(e);
+      } else {
+        state = AsyncError(e, st);
+      }
     } finally {
       _loading = false;
     }
@@ -58,9 +72,11 @@ class ShoppingListsNotifier extends Notifier<AsyncValue<List<ShoppingList>>> {
     _errors(ref).clear();
     try {
       final created = await repo.createList(name);
+      if (!ref.mounted) return;
       final prev = state.value ?? const <ShoppingList>[];
       state = AsyncData([...prev, created]);
     } catch (e) {
+      if (!ref.mounted) return;
       _errors(ref).report(e);
     }
   }
@@ -70,9 +86,11 @@ class ShoppingListsNotifier extends Notifier<AsyncValue<List<ShoppingList>>> {
     _errors(ref).clear();
     try {
       final updated = await repo.renameList(id, name);
+      if (!ref.mounted) return;
       final prev = state.value ?? const <ShoppingList>[];
       state = AsyncData(prev.map((l) => l.id == id ? updated : l).toList());
     } catch (e) {
+      if (!ref.mounted) return;
       _errors(ref).report(e);
     }
   }
@@ -83,8 +101,10 @@ class ShoppingListsNotifier extends Notifier<AsyncValue<List<ShoppingList>>> {
     _errors(ref).clear();
     try {
       await repo.deleteList(id);
+      if (!ref.mounted) return;
       state = AsyncData(prev.where((l) => l.id != id).toList());
     } catch (e) {
+      if (!ref.mounted) return;
       _errors(ref).report(e);
     }
   }
@@ -126,13 +146,27 @@ class ShoppingItemsNotifier extends Notifier<AsyncValue<List<ShoppingItem>>> {
     return const AsyncLoading();
   }
 
-  Future<void> load() async {
+  Future<void> load() => _fetch(showLoading: true);
+
+  /// Ricarica mantenendo gli articoli correnti (pull-to-refresh).
+  Future<void> refresh() => _fetch(showLoading: false);
+
+  Future<void> _fetch({required bool showLoading}) async {
     if (_loading) return;
     _loading = true;
     final repo = ref.read(shoppingRepositoryProvider);
+    if (showLoading) state = const AsyncLoading();
     try {
-      state = const AsyncLoading();
-      state = await AsyncValue.guard(() => repo.fetchItems(listId));
+      final items = await repo.fetchItems(listId);
+      if (!ref.mounted) return;
+      state = AsyncData(items);
+    } catch (e, st) {
+      if (!ref.mounted) return;
+      if (state.hasValue) {
+        _errors(ref).report(e);
+      } else {
+        state = AsyncError(e, st);
+      }
     } finally {
       _loading = false;
     }
@@ -147,12 +181,14 @@ class ShoppingItemsNotifier extends Notifier<AsyncValue<List<ShoppingItem>>> {
         name: name,
         quantity: quantity,
       );
+      if (!ref.mounted) return;
       final prev = state.value ?? const <ShoppingItem>[];
       state = AsyncData([...prev, created]);
       ref
           .read(shoppingListsProvider.notifier)
           .applyItemDelta(listId, totalDelta: 1);
     } catch (e) {
+      if (!ref.mounted) return;
       _errors(ref).report(e);
     }
   }
@@ -163,6 +199,7 @@ class ShoppingItemsNotifier extends Notifier<AsyncValue<List<ShoppingItem>>> {
     _errors(ref).clear();
     try {
       final updated = await repo.toggleItem(itemId, isChecked);
+      if (!ref.mounted) return;
       final prev = state.value ?? const <ShoppingItem>[];
       state = AsyncData(prev.map((i) => i.id == itemId ? updated : i).toList());
       if (wasChecked != isChecked) {
@@ -171,6 +208,7 @@ class ShoppingItemsNotifier extends Notifier<AsyncValue<List<ShoppingItem>>> {
             .applyItemDelta(listId, checkedDelta: isChecked ? 1 : -1);
       }
     } catch (e) {
+      if (!ref.mounted) return;
       _errors(ref).report(e);
     }
   }
@@ -182,6 +220,7 @@ class ShoppingItemsNotifier extends Notifier<AsyncValue<List<ShoppingItem>>> {
     _errors(ref).clear();
     try {
       await repo.deleteItem(itemId);
+      if (!ref.mounted) return;
       state = AsyncData(prev.where((i) => i.id != itemId).toList());
       ref
           .read(shoppingListsProvider.notifier)
@@ -191,6 +230,7 @@ class ShoppingItemsNotifier extends Notifier<AsyncValue<List<ShoppingItem>>> {
             checkedDelta: wasChecked ? -1 : 0,
           );
     } catch (e) {
+      if (!ref.mounted) return;
       _errors(ref).report(e);
     }
   }

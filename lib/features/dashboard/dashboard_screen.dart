@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:yuvomigo/core/widgets/error_retry_tile.dart';
 import 'package:yuvomigo/features/auth/auth_controller.dart';
 import 'package:yuvomigo/features/auth/auth_state.dart';
 import 'package:yuvomigo/features/dashboard/dashboard_models.dart';
@@ -47,7 +48,7 @@ final class DashboardScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             dashboard.when(
               loading: () => const _CenteredSpinner(),
-              error: (e, _) => _ErrorTile(
+              error: (e, _) => ErrorRetryTile(
                 message: 'Impossibile caricare la dashboard.',
                 detail: e.toString(),
                 onRetry: () {
@@ -97,51 +98,6 @@ final class _CenteredSpinner extends StatelessWidget {
     return const Padding(
       padding: EdgeInsets.all(32),
       child: Center(child: CircularProgressIndicator()),
-    );
-  }
-}
-
-final class _ErrorTile extends StatelessWidget {
-  const _ErrorTile({
-    required this.message,
-    required this.detail,
-    required this.onRetry,
-  });
-
-  final String message;
-  final String detail;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Card(
-      color: scheme.errorContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.error_outline, color: scheme.onErrorContainer),
-                const SizedBox(width: 8),
-                Text(
-                  message,
-                  style: TextStyle(
-                    color: scheme.onErrorContainer,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(detail, style: TextStyle(color: scheme.onErrorContainer)),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: onRetry, child: const Text('Riprova')),
-          ],
-        ),
-      ),
     );
   }
 }

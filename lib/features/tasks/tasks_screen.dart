@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:yuvomigo/core/widgets/error_retry_tile.dart';
 import 'package:yuvomigo/features/tasks/task_models.dart';
 import 'package:yuvomigo/features/tasks/task_providers.dart';
 
@@ -7,10 +8,11 @@ import 'package:yuvomigo/features/tasks/task_providers.dart';
 final class TasksScreen extends ConsumerWidget {
   const TasksScreen({super.key});
 
+  static const _scrollPhysics = AlwaysScrollableScrollPhysics();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tasks = ref.watch(tasksProvider);
-    final scheme = Theme.of(context).colorScheme;
     ref.listen<Object?>(tasksActionErrorProvider, (_, err) {
       if (err != null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -21,75 +23,63 @@ final class TasksScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Task')),
-      body: tasks.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Card(
-              color: scheme.errorContainer,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Impossibile caricare le task.',
-                      style: TextStyle(
-                        color: scheme.onErrorContainer,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      e.toString(),
-                      style: TextStyle(color: scheme.onErrorContainer),
-                    ),
-                  ],
-                ),
+      body: RefreshIndicator(
+        onRefresh: () => ref.read(tasksProvider.notifier).refresh(),
+        child: tasks.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => ListView(
+            physics: _scrollPhysics,
+            padding: const EdgeInsets.all(16),
+            children: [
+              ErrorRetryTile(
+                message: 'Impossibile caricare le task.',
+                detail: e.toString(),
+                onRetry: () => ref.read(tasksProvider.notifier).load(),
               ),
-            ),
-          ],
-        ),
-        data: (tasks) {
-          if (tasks.isEmpty) {
-            return ListView(
-              padding: const EdgeInsets.all(24),
-              children: [
-                Text(
-                  'Nessuna task aperta.\nUsa "Aggiungi" per crearne una.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ],
-            );
-          }
-          return ListView.builder(
-            itemCount: tasks.length,
-            itemBuilder: (context, index) {
-              final task = tasks[index];
-              final isDone = task.status == TaskStatus.done;
-              return ListTile(
-                leading: Checkbox(
-                  value: isDone,
-                  onChanged: (v) =>
-                      ref.read(tasksProvider.notifier).toggle(task.id),
-                ),
-                title: Text(
-                  task.title,
-                  style: TextStyle(
-                    decoration: isDone ? TextDecoration.lineThrough : null,
+            ],
+          ),
+          data: (tasks) {
+            if (tasks.isEmpty) {
+              return ListView(
+                physics: _scrollPhysics,
+                padding: const EdgeInsets.all(24),
+                children: [
+                  Text(
+                    'Nessuna task aperta.\nUsa "Aggiungi" per crearne una.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                ),
-                subtitle: _TaskSubtitle(task: task),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () => _confirmDelete(context, ref, task),
-                ),
+                ],
               );
-            },
-          );
-        },
+            }
+            return ListView.builder(
+              physics: _scrollPhysics,
+              itemCount: tasks.length,
+              itemBuilder: (context, index) {
+                final task = tasks[index];
+                final isDone = task.status == TaskStatus.done;
+                return ListTile(
+                  leading: Checkbox(
+                    value: isDone,
+                    onChanged: (v) =>
+                        ref.read(tasksProvider.notifier).toggle(task.id),
+                  ),
+                  title: Text(
+                    task.title,
+                    style: TextStyle(
+                      decoration: isDone ? TextDecoration.lineThrough : null,
+                    ),
+                  ),
+                  subtitle: _TaskSubtitle(task: task),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () => _confirmDelete(context, ref, task),
+                  ),
+                );
+              },
+            );
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _promptForTask(context, ref),

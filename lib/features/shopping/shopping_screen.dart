@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:yuvomigo/core/widgets/error_retry_tile.dart';
 import 'package:yuvomigo/features/shopping/shopping_providers.dart';
 
 /// Tab Spesa: le liste di spesa + creazione.
@@ -12,6 +13,8 @@ final class ShoppingScreen extends ConsumerStatefulWidget {
 }
 
 final class _ShoppingScreenState extends ConsumerState<ShoppingScreen> {
+  static const _scrollPhysics = AlwaysScrollableScrollPhysics();
+
   @override
   Widget build(BuildContext context) {
     final lists = ref.watch(shoppingListsProvider);
@@ -25,76 +28,88 @@ final class _ShoppingScreenState extends ConsumerState<ShoppingScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Spesa')),
-      body: lists.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => _ErrorTile(
-          detail: e.toString(),
-          onRetry: () => ref.read(shoppingListsProvider.notifier).load(),
-        ),
-        data: (lists) {
-          if (lists.isEmpty) {
-            return ListView(
-              padding: const EdgeInsets.all(24),
-              children: [
-                Text(
-                  'Nessuna lista di spesa.\nUsa "Aggiungi" per crearne una.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ],
-            );
-          }
-          return ListView.builder(
-            itemCount: lists.length,
-            itemBuilder: (context, index) {
-              final list = lists[index];
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: Theme.of(context)
-                      .colorScheme
-                      .primaryContainer,
-                  child: Icon(
-                    Icons.shopping_cart,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+      body: RefreshIndicator(
+        onRefresh: () => ref.read(shoppingListsProvider.notifier).refresh(),
+        child: lists.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => ListView(
+            physics: _scrollPhysics,
+            padding: const EdgeInsets.all(16),
+            children: [
+              ErrorRetryTile(
+                message: 'Impossibile caricare le liste.',
+                detail: e.toString(),
+                onRetry: () => ref.read(shoppingListsProvider.notifier).load(),
+              ),
+            ],
+          ),
+          data: (lists) {
+            if (lists.isEmpty) {
+              return ListView(
+                physics: _scrollPhysics,
+                padding: const EdgeInsets.all(24),
+                children: [
+                  Text(
+                    'Nessuna lista di spesa.\nUsa "Aggiungi" per crearne una.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                ),
-                title: Text(list.name),
-                subtitle: Text(
-                  '${list.openCount} aperti · ${list.itemChecked}/${list.itemTotal} spuntati',
-                ),
-                trailing: PopupMenuButton<String>(
-                  tooltip: 'Azioni lista',
-                  onSelected: (value) {
-                    if (value == 'rename') {
-                      _promptForRename(context, list.id, list.name);
-                    } else if (value == 'delete') {
-                      _confirmDelete(context, list.id, list.name);
-                    }
-                  },
-                  itemBuilder: (menuContext) => const [
-                    PopupMenuItem(
-                      value: 'rename',
-                      child: ListTile(
-                        leading: Icon(Icons.edit_outlined),
-                        title: Text('Rinomina'),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: ListTile(
-                        leading: Icon(Icons.delete_outline),
-                        title: Text('Elimina'),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
-                  ],
-                ),
-                onTap: () => context.push('/shopping/${list.id}'),
+                ],
               );
-            },
-          );
-        },
+            }
+            return ListView.builder(
+              physics: _scrollPhysics,
+              itemCount: lists.length,
+              itemBuilder: (context, index) {
+                final list = lists[index];
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Theme.of(context)
+                        .colorScheme
+                        .primaryContainer,
+                    child: Icon(
+                      Icons.shopping_cart,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  title: Text(list.name),
+                  subtitle: Text(
+                    '${list.openCount} aperti · ${list.itemChecked}/${list.itemTotal} spuntati',
+                  ),
+                  trailing: PopupMenuButton<String>(
+                    tooltip: 'Azioni lista',
+                    onSelected: (value) {
+                      if (value == 'rename') {
+                        _promptForRename(context, list.id, list.name);
+                      } else if (value == 'delete') {
+                        _confirmDelete(context, list.id, list.name);
+                      }
+                    },
+                    itemBuilder: (menuContext) => const [
+                      PopupMenuItem(
+                        value: 'rename',
+                        child: ListTile(
+                          leading: Icon(Icons.edit_outlined),
+                          title: Text('Rinomina'),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: ListTile(
+                          leading: Icon(Icons.delete_outline),
+                          title: Text('Elimina'),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ],
+                  ),
+                  onTap: () => context.push('/shopping/${list.id}'),
+                );
+              },
+            );
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _promptForName(context),
@@ -197,45 +212,6 @@ final class _ShoppingScreenState extends ConsumerState<ShoppingScreen> {
           ),
         ],
       ),
-    );
-  }
-}
-
-final class _ErrorTile extends StatelessWidget {
-  const _ErrorTile({required this.detail, required this.onRetry});
-
-  final String detail;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Card(
-          color: scheme.errorContainer,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Impossibile caricare le liste.',
-                  style: TextStyle(
-                    color: scheme.onErrorContainer,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(detail, style: TextStyle(color: scheme.onErrorContainer)),
-                const SizedBox(height: 12),
-                FilledButton(onPressed: onRetry, child: const Text('Riprova')),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

@@ -38,13 +38,28 @@ final class TasksNotifier extends Notifier<AsyncValue<List<Task>>> {
     return const AsyncLoading();
   }
 
-  Future<void> load() async {
+  Future<void> load() => _fetch(showLoading: true);
+
+  /// Ricarica mantenendo i dati correnti (pull-to-refresh).
+  Future<void> refresh() => _fetch(showLoading: false);
+
+  Future<void> _fetch({required bool showLoading}) async {
     if (_loading) return;
     _loading = true;
     final repo = ref.read(taskRepositoryProvider);
+    if (showLoading) state = const AsyncLoading();
     try {
-      state = const AsyncLoading();
-      state = await AsyncValue.guard(() => repo.fetchTasks());
+      final tasks = await repo.fetchTasks();
+      if (!ref.mounted) return;
+      state = AsyncData(tasks);
+    } catch (e, st) {
+      if (!ref.mounted) return;
+      if (state.hasValue) {
+        // La lista mostrata è ancora valida: l'errore va allo SnackBar.
+        ref.read(tasksActionErrorProvider.notifier).report(e);
+      } else {
+        state = AsyncError(e, st);
+      }
     } finally {
       _loading = false;
     }
@@ -63,10 +78,12 @@ final class TasksNotifier extends Notifier<AsyncValue<List<Task>>> {
         dueDate: dueDate,
         priority: priority,
       );
+      if (!ref.mounted) return;
       final tasks = [...state.value ?? const <Task>[], created]
         ..sort(compareTasksByDueDate);
       state = AsyncData(tasks);
     } catch (e) {
+      if (!ref.mounted) return;
       // La lista resta quella di prima: l'errore va allo SnackBar.
       ref.read(tasksActionErrorProvider.notifier).report(e);
     }
@@ -85,6 +102,7 @@ final class TasksNotifier extends Notifier<AsyncValue<List<Task>>> {
     ref.read(tasksActionErrorProvider.notifier).clear();
     try {
       final updated = await repo.setStatus(id, next);
+      if (!ref.mounted) return;
       // La lista mostra le task aperte: quelle completate escono di scena
       // (come nel web, che dopo il toggle ricarica la vista filtrata).
       final tasks = next == TaskStatus.done
@@ -92,6 +110,7 @@ final class TasksNotifier extends Notifier<AsyncValue<List<Task>>> {
           : prev.map((t) => t.id == id ? updated : t).toList();
       state = AsyncData(tasks);
     } catch (e) {
+      if (!ref.mounted) return;
       ref.read(tasksActionErrorProvider.notifier).report(e);
     }
   }
@@ -102,8 +121,10 @@ final class TasksNotifier extends Notifier<AsyncValue<List<Task>>> {
     ref.read(tasksActionErrorProvider.notifier).clear();
     try {
       await repo.deleteTask(id);
+      if (!ref.mounted) return;
       state = AsyncData(prev.where((t) => t.id != id).toList());
     } catch (e) {
+      if (!ref.mounted) return;
       ref.read(tasksActionErrorProvider.notifier).report(e);
     }
   }

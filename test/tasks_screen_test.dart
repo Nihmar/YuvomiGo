@@ -27,11 +27,15 @@ final class FakeTaskRepository extends TaskRepository {
     Task(id: 2, title: 'Pagare bolletta', priority: 'high'),
   ];
   int _nextId = 100;
+  int fetchCalls = 0;
 
   @override
   Future<List<Task>> fetchTasks({
     List<String> statuses = const ['open', 'in_progress'],
-  }) async => tasks.toList();
+  }) async {
+    fetchCalls++;
+    return tasks.toList();
+  }
 
   @override
   Future<Task> createTask({
@@ -169,5 +173,17 @@ void main() {
 
     expect(find.text('Riparare bici'), findsOneWidget);
     expect(find.textContaining('in corso'), findsOneWidget);
+  });
+
+  testWidgets('Pull-to-refresh reloads the list', (tester) async {
+    final repo = FakeTaskRepository();
+    await tester.pumpWidget(_pump(const TasksScreen(), repo));
+    await tester.pumpAndSettle();
+    final callsBefore = repo.fetchCalls;
+
+    await tester.fling(find.byType(ListView), const Offset(0, 300), 1000);
+    await tester.pumpAndSettle();
+
+    expect(repo.fetchCalls, greaterThan(callsBefore));
   });
 }
