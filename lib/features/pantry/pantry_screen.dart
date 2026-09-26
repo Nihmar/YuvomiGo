@@ -63,6 +63,12 @@ final class PantryScreen extends ConsumerWidget {
                   leading: const Icon(Icons.kitchen_outlined),
                   title: Text(item.name),
                   subtitle: Text(_subtitle(context, item)),
+                  onTap: () => _PantryEditorDialog.show(
+                    context,
+                    item: item,
+                    locations: data.locations,
+                    categories: data.categories,
+                  ),
                   trailing: IconButton(
                     tooltip: 'Elimina',
                     icon: const Icon(Icons.delete_outline),
@@ -79,7 +85,7 @@ final class PantryScreen extends ConsumerWidget {
         builder: (context) {
           final data = pantry.value;
           return FloatingActionButton(
-            onPressed: () => _AddPantryItemDialog.show(
+            onPressed: () => _PantryEditorDialog.show(
               context,
               locations: data?.locations ?? const [],
               categories: data?.categories ?? const [],
@@ -120,35 +126,41 @@ final class PantryScreen extends ConsumerWidget {
   }
 }
 
-/// Dialog per aggiungere un articolo alla dispensa.
-final class _AddPantryItemDialog extends ConsumerStatefulWidget {
-  const _AddPantryItemDialog({
+/// Dialog per creare/modificare un articolo della dispensa.
+final class _PantryEditorDialog extends ConsumerStatefulWidget {
+  const _PantryEditorDialog({
     required this.locations,
     required this.categories,
+    this.item,
   });
 
   final List<PantryLocation> locations;
   final List<String> categories;
+  final PantryItem? item;
 
   static Future<void> show(
     BuildContext context, {
     required List<PantryLocation> locations,
     required List<String> categories,
+    PantryItem? item,
   }) {
     return showDialog<void>(
       context: context,
-      builder: (_) =>
-          _AddPantryItemDialog(locations: locations, categories: categories),
+      builder: (_) => _PantryEditorDialog(
+        locations: locations,
+        categories: categories,
+        item: item,
+      ),
     );
   }
 
   @override
-  ConsumerState<_AddPantryItemDialog> createState() =>
-      _AddPantryItemDialogState();
+  ConsumerState<_PantryEditorDialog> createState() =>
+      _PantryEditorDialogState();
 }
 
-final class _AddPantryItemDialogState
-    extends ConsumerState<_AddPantryItemDialog> {
+final class _PantryEditorDialogState
+    extends ConsumerState<_PantryEditorDialog> {
   static const _units = [
     'pcs',
     'g',
@@ -170,6 +182,22 @@ final class _AddPantryItemDialogState
   String? _category;
   DateTime? _expiresOn;
   bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final item = widget.item;
+    if (item == null) return;
+    _name.text = item.name;
+    _quantity.text = pantryQuantityLabel(item.quantity);
+    _minQuantity.text = item.minQuantity == null
+        ? ''
+        : pantryQuantityLabel(item.minQuantity!);
+    _unit = item.unit;
+    _locationId = item.locationId;
+    _category = item.category.isEmpty ? null : item.category;
+    _expiresOn = DateTime.tryParse(item.expiresOn ?? '');
+  }
 
   @override
   void dispose() {
@@ -196,19 +224,34 @@ final class _AddPantryItemDialogState
     if (name.isEmpty) return;
     setState(() => _busy = true);
     final navigator = Navigator.of(context);
-    final created = await ref
-        .read(pantryProvider.notifier)
-        .add(
-          name: name,
-          quantity: double.tryParse(_quantity.text.replaceAll(',', '.')),
-          unit: _unit,
-          locationId: _locationId,
-          category: _category,
-          expiresOn: _expiresOn == null ? null : _dateKey(_expiresOn!),
-          minQuantity: double.tryParse(_minQuantity.text.replaceAll(',', '.')),
-        );
+    final notifier = ref.read(pantryProvider.notifier);
+    final item = widget.item;
+    final success = item == null
+        ? await notifier.add(
+            name: name,
+            quantity: double.tryParse(_quantity.text.replaceAll(',', '.')),
+            unit: _unit,
+            locationId: _locationId,
+            category: _category,
+            expiresOn: _expiresOn == null ? null : _dateKey(_expiresOn!),
+            minQuantity: double.tryParse(
+              _minQuantity.text.replaceAll(',', '.'),
+            ),
+          )
+        : await notifier.update(
+            item.id,
+            name: name,
+            quantity: double.tryParse(_quantity.text.replaceAll(',', '.')),
+            unit: _unit,
+            locationId: _locationId,
+            category: _category,
+            expiresOn: _expiresOn == null ? null : _dateKey(_expiresOn!),
+            minQuantity: double.tryParse(
+              _minQuantity.text.replaceAll(',', '.'),
+            ),
+          );
     if (!mounted) return;
-    if (!created) {
+    if (!success) {
       setState(() => _busy = false);
       return;
     }
@@ -218,7 +261,7 @@ final class _AddPantryItemDialogState
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Nuovo articolo'),
+      title: Text(widget.item == null ? 'Nuovo articolo' : 'Modifica articolo'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -351,7 +394,7 @@ final class _AddPantryItemDialogState
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Aggiungi'),
+              : Text(widget.item == null ? 'Aggiungi' : 'Salva'),
         ),
       ],
     );

@@ -97,6 +97,42 @@ final class PantryNotifier extends Notifier<AsyncValue<PantryData>> {
     }
   }
 
+  /// Aggiorna l'articolo (sostituzione completa); false se fallisce.
+  Future<bool> update(
+    int id, {
+    required String name,
+    double? quantity,
+    String? unit,
+    int? locationId,
+    String? category,
+    String? expiresOn,
+    double? minQuantity,
+    String? notes,
+  }) async {
+    final repo = ref.read(pantryRepositoryProvider);
+    ref.read(pantryActionErrorProvider.notifier).clear();
+    try {
+      await repo.updateItem(
+        id,
+        name: name,
+        quantity: quantity,
+        unit: unit,
+        locationId: locationId,
+        category: category,
+        expiresOn: expiresOn,
+        minQuantity: minQuantity,
+        notes: notes,
+      );
+      if (!ref.mounted) return true;
+      await _fetch(showLoading: false);
+      return true;
+    } catch (e) {
+      if (!ref.mounted) return false;
+      ref.read(pantryActionErrorProvider.notifier).report(e);
+      return false;
+    }
+  }
+
   Future<void> remove(int id) async {
     final repo = ref.read(pantryRepositoryProvider);
     ref.read(pantryActionErrorProvider.notifier).clear();

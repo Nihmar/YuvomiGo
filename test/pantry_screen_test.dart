@@ -54,6 +54,7 @@ final class FakePantryRepository extends PantryRepository {
   );
 
   final List<String> created = [];
+  final List<String> updated = [];
 
   @override
   Future<PantryData> fetchPantry() async => data;
@@ -78,6 +79,42 @@ final class FakePantryRepository extends PantryRepository {
     );
     data = PantryData(
       items: [...data.items, item],
+      locations: data.locations,
+      categories: data.categories,
+    );
+    return item;
+  }
+
+  @override
+  Future<PantryItem> updateItem(
+    int id, {
+    required String name,
+    double? quantity,
+    String? unit,
+    int? locationId,
+    String? category,
+    String? expiresOn,
+    double? minQuantity,
+    String? notes,
+  }) async {
+    updated.add(name);
+    final index = data.items.indexWhere((i) => i.id == id);
+    final item = PantryItem(
+      id: id,
+      name: name,
+      quantity: quantity ?? data.items[index].quantity,
+      unit: unit ?? data.items[index].unit,
+      locationId: locationId,
+      category: category ?? '',
+      expiresOn: expiresOn,
+      minQuantity: minQuantity,
+      notes: notes,
+    );
+    data = PantryData(
+      items: [
+        for (final existing in data.items)
+          if (existing.id == id) item else existing,
+      ],
       locations: data.locations,
       categories: data.categories,
     );
@@ -147,5 +184,28 @@ void main() {
 
     expect(find.text('Farina'), findsNothing);
     expect(repo.data.items.map((i) => i.name), isNot(contains('Farina')));
+  });
+
+  testWidgets('Editing an item updates it', (tester) async {
+    final repo = FakePantryRepository();
+    await tester.pumpWidget(_pump(repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Farina'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find
+          .descendant(
+            of: find.byType(AlertDialog),
+            matching: find.byType(TextField),
+          )
+          .first,
+      'Farina 00',
+    );
+    await tester.tap(find.text('Salva').first);
+    await tester.pumpAndSettle();
+
+    expect(repo.updated, ['Farina 00']);
+    expect(find.text('Farina 00'), findsOneWidget);
   });
 }

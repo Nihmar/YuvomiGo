@@ -116,4 +116,29 @@ void main() {
     expect(adapter.requests.first.method, 'DELETE');
     expect(adapter.requests.first.path, '/api/v1/pantry/7');
   });
+
+  test('updateItem PUTs the full payload', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('PUT', '/api/v1/pantry/7', {
+      'data': {'id': 7, 'name': 'Farina', 'quantity': 1.5, 'unit': 'kg'},
+    });
+    final repo = PantryRepository(apiWith(adapter));
+    final updated = await repo.updateItem(
+      7,
+      name: 'Farina',
+      quantity: 1.5,
+      unit: 'kg',
+      minQuantity: 1,
+    );
+
+    expect(updated.quantity, 1.5);
+    expect(adapter.requests.first.method, 'PUT');
+    expect(adapter.requests.first.path, '/api/v1/pantry/7');
+    expect(adapter.requests.first.data, {
+      'name': 'Farina',
+      'quantity': 1.5,
+      'unit': 'kg',
+      'min_quantity': 1.0,
+    });
+  });
 }

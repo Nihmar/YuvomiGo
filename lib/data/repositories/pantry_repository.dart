@@ -65,6 +65,36 @@ base class PantryRepository {
     });
   }
 
+  /// PUT = sostituzione completa dell'articolo (come il server).
+  Future<PantryItem> updateItem(
+    int id, {
+    required String name,
+    double? quantity,
+    String? unit,
+    int? locationId,
+    String? category,
+    String? expiresOn,
+    double? minQuantity,
+    String? notes,
+  }) {
+    return mapApiErrors(() async {
+      final res = await _api.dio.put<dynamic>(
+        '/api/v1/pantry/$id',
+        data: {
+          'name': name,
+          'quantity': ?quantity,
+          'unit': ?unit,
+          'location_id': ?locationId,
+          'category': ?category,
+          'expires_on': ?expiresOn,
+          'min_quantity': ?minQuantity,
+          'notes': ?notes,
+        },
+      );
+      return PantryItem.fromJson(_data(res.data));
+    });
+  }
+
   Future<void> deleteItem(int id) {
     return mapApiErrors(() => _api.dio.delete<void>('/api/v1/pantry/$id'));
   }
