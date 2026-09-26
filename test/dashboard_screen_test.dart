@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:yuvomigo/features/auth/auth_controller.dart';
 import 'package:yuvomigo/features/auth/auth_state.dart';
 import 'package:yuvomigo/features/dashboard/dashboard_models.dart';
@@ -93,6 +95,29 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('5 articoli · 3 liste'), findsOneWidget);
+  });
+
+  testWidgets('Dashboard date is localized in Italian', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(
+            () => FakeAuthController(Authenticated(user: fakeUser())),
+          ),
+          dashboardProvider.overrideWithValue(const AsyncData(DashboardData())),
+        ],
+        child: MaterialApp(
+          locale: const Locale('it'),
+          supportedLocales: const [Locale('it')],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          home: const DashboardScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final expected = DateFormat('EEEE d MMMM', 'it').format(DateTime.now());
+    expect(find.text(expected), findsOneWidget);
   });
 
   testWidgets('Dashboard shows empty state when there is no data', (
