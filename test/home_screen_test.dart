@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:yuvomigo/core/api/yuvomi_api.dart';
 import 'package:yuvomigo/core/auth/session_manager.dart';
 import 'package:yuvomigo/data/repositories/calendar_repository.dart';
+import 'package:yuvomigo/data/repositories/meal_repository.dart';
 import 'package:yuvomigo/data/repositories/shopping_repository.dart';
 import 'package:yuvomigo/features/auth/auth_controller.dart';
 import 'package:yuvomigo/features/auth/auth_state.dart';
@@ -11,6 +12,8 @@ import 'package:yuvomigo/features/calendar/calendar_models.dart';
 import 'package:yuvomigo/features/calendar/calendar_providers.dart';
 import 'package:yuvomigo/features/dashboard/dashboard_models.dart';
 import 'package:yuvomigo/features/dashboard/dashboard_providers.dart';
+import 'package:yuvomigo/features/meals/meal_models.dart';
+import 'package:yuvomigo/features/meals/meal_providers.dart';
 import 'package:yuvomigo/features/shopping/shopping_models.dart';
 import 'package:yuvomigo/features/shopping/shopping_providers.dart';
 import 'package:yuvomigo/app.dart';
@@ -41,6 +44,23 @@ final _sample = DashboardData(
   urgentTasks: [DashTask(id: 10, title: 'Paga bolletta', priority: 'urgent')],
   openTaskCount: 7,
 );
+
+final class _FakeMealRepository extends MealRepository {
+  _FakeMealRepository()
+    : super(
+        YuvomiApi(
+          baseUrl: 'http://fake.local',
+          sessions: SessionManager(InMemoryStorage()),
+        ),
+      );
+
+  @override
+  Future<MealWeek> fetchWeek(String week) async => const MealWeek(
+    weekStart: '2026-08-31',
+    weekEnd: '2026-09-06',
+    meals: [Meal(id: 1, date: '2026-09-01', mealType: 'lunch', title: 'Pasta')],
+  );
+}
 
 final class _FakeShoppingRepository extends ShoppingRepository {
   _FakeShoppingRepository()
@@ -178,5 +198,51 @@ void main() {
 
     expect(find.text('Impostazioni'), findsOneWidget);
     expect(find.text('Utente Test'), findsOneWidget);
+  });
+
+  testWidgets('The modules button lists the extra modules', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(
+            () => FakeAuthController(Authenticated(user: fakeUser())),
+          ),
+          dashboardProvider.overrideWithValue(AsyncData(_sample)),
+        ],
+        child: const YuvomiGoApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.apps));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pasti'), findsOneWidget);
+    expect(find.text('Compleanni'), findsOneWidget);
+    expect(find.text('Promemoria'), findsOneWidget);
+    expect(find.text('Budget'), findsOneWidget);
+  });
+
+  testWidgets('A module from the sheet opens its screen', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(
+            () => FakeAuthController(Authenticated(user: fakeUser())),
+          ),
+          dashboardProvider.overrideWithValue(AsyncData(_sample)),
+          mealRepositoryProvider.overrideWithValue(_FakeMealRepository()),
+        ],
+        child: const YuvomiGoApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.apps));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pasti'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pasta'), findsOneWidget);
   });
 }

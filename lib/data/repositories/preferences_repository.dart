@@ -31,6 +31,19 @@ final class AppPreferences {
   }
 }
 
+/// Un paese disponibile per le festività.
+final class HolidayCountry {
+  const HolidayCountry({required this.isoCode, required this.name});
+
+  final String isoCode;
+  final String name;
+
+  factory HolidayCountry.fromJson(Map<String, dynamic> json) => HolidayCountry(
+    isoCode: json['isoCode'] as String? ?? '',
+    name: json['name'] as String? ?? '',
+  );
+}
+
 /// Repository delle preferenze di istanza/utente.
 base class PreferencesRepository {
   PreferencesRepository(this._api);
@@ -54,6 +67,21 @@ base class PreferencesRepository {
         data: patch,
       );
       return AppPreferences.fromJson(res.data ?? const <String, dynamic>{});
+    });
+  }
+
+  /// Paesi selezionabili per le festività.
+  Future<List<HolidayCountry>> fetchHolidayCountries() {
+    return mapApiErrors(() async {
+      final res = await _api.dio.get<Map<String, dynamic>>(
+        '/api/v1/preferences/holidays/countries',
+      );
+      final data = res.data?['data'];
+      final raw = data is List ? data : const <dynamic>[];
+      return raw
+          .whereType<Map<String, dynamic>>()
+          .map(HolidayCountry.fromJson)
+          .toList();
     });
   }
 }

@@ -6,6 +6,7 @@ import 'package:yuvomigo/features/auth/auth_controller.dart';
 import 'package:yuvomigo/features/auth/auth_state.dart';
 import 'package:yuvomigo/features/dashboard/dashboard_models.dart';
 import 'package:yuvomigo/features/dashboard/dashboard_providers.dart';
+import 'package:yuvomigo/features/home/modules_button.dart';
 import 'package:yuvomigo/features/settings/settings_button.dart';
 import 'package:yuvomigo/features/theme/theme_picker_button.dart';
 
@@ -20,7 +21,11 @@ final class DashboardScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
-        actions: [const ThemePickerButton(), const SettingsButton()],
+        actions: [
+          const ThemePickerButton(),
+          const ModulesButton(),
+          const SettingsButton(),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () async {

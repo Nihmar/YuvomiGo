@@ -22,3 +22,10 @@ final appPreferencesProvider = FutureProvider.autoDispose<AppPreferences>((
 final appPreferencesValueProvider = Provider<AppPreferences>((ref) {
   return ref.watch(appPreferencesProvider).value ?? const AppPreferences();
 });
+
+/// Paesi selezionabili per le festività (richiede rete lato server).
+final holidayCountriesProvider =
+    FutureProvider.autoDispose<List<HolidayCountry>>((ref) async {
+      final repo = ref.watch(preferencesRepositoryProvider);
+      return repo.fetchHolidayCountries();
+    });
