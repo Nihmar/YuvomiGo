@@ -32,6 +32,7 @@ final class InventoryItem {
     this.serialNumber,
     this.category = '',
     this.categoryName,
+    this.locationId,
     this.locationPath,
     this.purchaseDate,
     this.purchasePrice,
@@ -52,6 +53,7 @@ final class InventoryItem {
   final String? serialNumber;
   final String category;
   final String? categoryName;
+  final int? locationId;
   final String? locationPath;
   final String? purchaseDate;
   final double? purchasePrice;
@@ -76,6 +78,7 @@ final class InventoryItem {
       serialNumber: json['serial_number'] as String?,
       category: json['category'] as String? ?? '',
       categoryName: json['category_name'] as String?,
+      locationId: (json['location_id'] as num?)?.toInt(),
       locationPath: json['location_path'] as String?,
       purchaseDate: json['purchase_date'] as String?,
       purchasePrice: (json['purchase_price'] as num?)?.toDouble(),
@@ -110,3 +113,64 @@ String inventoryConditionLabel(String condition) => switch (condition) {
   'poor' => 'Da sostituire',
   _ => condition,
 };
+
+/// Una categoria di inventario (server: `inventory_categories`).
+final class InventoryCategory {
+  const InventoryCategory({
+    required this.id,
+    required this.key,
+    required this.name,
+  });
+
+  final int id;
+  final String key;
+  final String name;
+
+  factory InventoryCategory.fromJson(Map<String, dynamic> json) =>
+      InventoryCategory(
+        id: (json['id'] as num?)?.toInt() ?? -1,
+        key: json['key'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+      );
+}
+
+/// Una posizione di inventario, con eventuali sotto-posizioni.
+final class InventoryLocation {
+  const InventoryLocation({
+    required this.id,
+    required this.name,
+    this.subcategories = const [],
+  });
+
+  final int id;
+  final String name;
+  final List<InventoryLocation> subcategories;
+
+  factory InventoryLocation.fromJson(Map<String, dynamic> json) {
+    final raw = json['subcategories'] is List
+        ? json['subcategories'] as List
+        : const [];
+    return InventoryLocation(
+      id: (json['id'] as num?)?.toInt() ?? -1,
+      name: json['name'] as String? ?? '',
+      subcategories: raw
+          .whereType<Map<String, dynamic>>()
+          .map(InventoryLocation.fromJson)
+          .toList(),
+    );
+  }
+}
+
+/// Appiattisce l'albero delle posizioni ("Casa / Cantina").
+List<({int id, String label})> flattenInventoryLocations(
+  List<InventoryLocation> roots,
+) {
+  final result = <({int id, String label})>[];
+  for (final root in roots) {
+    result.add((id: root.id, label: root.name));
+    for (final child in root.subcategories) {
+      result.add((id: child.id, label: '${root.name} / ${child.name}'));
+    }
+  }
+  return result;
+}

@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:yuvomigo/core/api/yuvomi_api.dart';
 import 'package:yuvomigo/core/auth/session_manager.dart';
 import 'package:yuvomigo/data/repositories/inventory_repository.dart';
+import 'package:yuvomigo/features/inventory/inventory_models.dart';
 
 import 'utils/in_memory_storage.dart';
 
@@ -104,5 +105,96 @@ void main() {
     await repo.fetchItems(query: 'bosch');
 
     expect(adapter.requests.first.queryParameters['q'], 'bosch');
+  });
+
+  test('fetchCategories and fetchLocations parse the lists', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('GET', '/api/v1/inventory/categories', {
+      'data': [
+        {'id': 1, 'key': 'household', 'name': 'Casa'},
+      ],
+    });
+    adapter.addRoute('GET', '/api/v1/inventory/locations', {
+      'data': [
+        {
+          'id': 1,
+          'name': 'Casa',
+          'subcategories': [
+            {'id': 2, 'name': 'Cantina'},
+          ],
+        },
+      ],
+    });
+    final repo = InventoryRepository(apiWith(adapter));
+
+    final categories = await repo.fetchCategories();
+    final locations = await repo.fetchLocations();
+    final flattened = flattenInventoryLocations(locations);
+
+    expect(categories.single.key, 'household');
+    expect(categories.single.name, 'Casa');
+    expect(flattened.map((l) => l.label), ['Casa', 'Casa / Cantina']);
+    expect(flattened.last.id, 2);
+  });
+
+  test('createItem posts the full payload', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('POST', '/api/v1/inventory/items', {
+      'data': {'id': 7, 'name': 'Trapano', 'category': 'household'},
+    });
+    final repo = InventoryRepository(apiWith(adapter));
+    final created = await repo.createItem(
+      name: 'Trapano',
+      brand: 'Makita',
+      category: 'household',
+      locationId: 2,
+      purchasePrice: 99.9,
+      warrantyMonths: 24,
+    );
+
+    expect(created.id, 7);
+    expect(adapter.requests.first.data, {
+      'name': 'Trapano',
+      'brand': 'Makita',
+      'model': null,
+      'serial_number': null,
+      'category': 'household',
+      'location_id': 2,
+      'purchase_date': null,
+      'purchase_price': 99.9,
+      'vendor': null,
+      'warranty_months': 24,
+      'condition': 'good',
+      'status': 'active',
+      'notes': null,
+    });
+  });
+
+  test('updateItem PUTs the full payload', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('PUT', '/api/v1/inventory/items/7', {
+      'data': {'id': 7, 'name': 'Trapano', 'category': 'household'},
+    });
+    final repo = InventoryRepository(apiWith(adapter));
+    await repo.updateItem(
+      7,
+      name: 'Trapano',
+      category: 'household',
+      status: 'sold',
+    );
+
+    expect(adapter.requests.first.method, 'PUT');
+    expect(adapter.requests.first.path, '/api/v1/inventory/items/7');
+    expect(adapter.requests.first.data['status'], 'sold');
+  });
+
+  test('deleteItem issues a DELETE', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('DELETE', '/api/v1/inventory/items/7', {});
+    final repo = InventoryRepository(apiWith(adapter));
+    await repo.deleteItem(7);
+
+    expect(adapter.requests.first.method, 'DELETE');
+    expect(adapter.requests.first.path, '/api/v1/inventory/items/7');
   });
 }
