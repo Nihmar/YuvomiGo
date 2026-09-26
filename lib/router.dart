@@ -5,6 +5,7 @@ import 'package:yuvomigo/features/auth/auth_controller.dart';
 import 'package:yuvomigo/features/auth/auth_state.dart';
 import 'package:yuvomigo/features/auth/login_screen.dart';
 import 'package:yuvomigo/features/birthdays/birthdays_screen.dart';
+import 'package:yuvomigo/features/budget/budget_screen.dart';
 import 'package:yuvomigo/features/calendar/calendar_screen.dart';
 import 'package:yuvomigo/features/dashboard/dashboard_screen.dart';
 import 'package:yuvomigo/features/home/home_screen.dart';
@@ -104,6 +105,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/reminders',
         name: 'reminders',
         builder: (context, state) => const RemindersScreen(),
+      ),
+      GoRoute(
+        path: '/budget',
+        name: 'budget',
+        builder: (context, state) => const BudgetScreen(),
       ),
       GoRoute(
         path: '/settings',
