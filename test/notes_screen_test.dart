@@ -42,6 +42,7 @@ final class FakeNoteRepository extends NoteRepository {
       id: _nextId++,
       content: content,
       title: title,
+      color: color,
       pinned: pinned,
     );
     notes.add(n);
@@ -122,6 +123,22 @@ void main() {
 
     expect(find.text('nuova nota'), findsWidgets);
     expect(repo.notes.map((n) => n.content), contains('nuova nota'));
+  });
+
+  testWidgets('Creating a note can set a color', (tester) async {
+    final repo = FakeNoteRepository();
+    await tester.pumpWidget(_pump(const NotesScreen(), repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).at(1), 'nota blu');
+    await tester.tap(find.byKey(const ValueKey('note-color-#BBDEFB')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Salva'));
+    await tester.pumpAndSettle();
+
+    expect(repo.notes.last.color, '#BBDEFB');
   });
 
   testWidgets('Deleting a note removes it', (tester) async {
