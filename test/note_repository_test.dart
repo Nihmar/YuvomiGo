@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:yuvomigo/core/api/api_error.dart';
 import 'package:yuvomigo/core/api/yuvomi_api.dart';
 import 'package:yuvomigo/core/auth/session_manager.dart';
 import 'package:yuvomigo/data/repositories/note_repository.dart';
@@ -113,5 +114,14 @@ void main() {
 
     expect(adapter.requests.first.method, 'DELETE');
     expect(adapter.requests.first.path, '/api/v1/notes/3');
+  });
+
+  test('fetchNote throws ApiServerError on an unexpected payload', () async {
+    // Nessuna route registrata: l'adapter risponde {'data': []} a un GET
+    // che si aspetta un oggetto.
+    final adapter = _RoutingAdapter();
+    final repo = NoteRepository(apiWith(adapter));
+
+    await expectLater(repo.fetchNote(9), throwsA(isA<ApiServerError>()));
   });
 }

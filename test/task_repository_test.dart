@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:yuvomigo/core/api/api_error.dart';
 import 'package:yuvomigo/core/api/yuvomi_api.dart';
 import 'package:yuvomigo/core/auth/session_manager.dart';
 import 'package:yuvomigo/data/repositories/task_repository.dart';
@@ -14,8 +15,18 @@ final class _RoutingAdapter implements HttpClientAdapter {
   final List<Map<String, dynamic>> routes = [];
   final List<RequestOptions> requests = [];
 
-  void addRoute(String method, String path, Object body) {
-    routes.add({'method': method, 'path': path, 'body': body});
+  void addRoute(
+    String method,
+    String path,
+    Object body, {
+    int statusCode = 200,
+  }) {
+    routes.add({
+      'method': method,
+      'path': path,
+      'body': body,
+      'statusCode': statusCode,
+    });
   }
 
   @override
@@ -29,7 +40,7 @@ final class _RoutingAdapter implements HttpClientAdapter {
       if (r['method'] == options.method && r['path'] == options.path) {
         return ResponseBody.fromString(
           jsonEncode(r['body']),
-          200,
+          r['statusCode'] as int,
           headers: const {
             'content-type': ['application/json'],
           },
@@ -122,4 +133,73 @@ void main() {
     expect(adapter.requests.first.method, 'DELETE');
     expect(adapter.requests.first.path, '/api/v1/tasks/7');
   });
+
+  test(
+    'maps a 500 response to ApiServerError with the server message',
+    () async {
+      final adapter = _RoutingAdapter();
+      adapter.addRoute('GET', '/api/v1/tasks', {
+        'error': 'Boom interno',
+      }, statusCode: 500);
+      final repo = TaskRepository(apiWith(adapter));
+
+      await expectLater(
+        repo.fetchTasks(),
+        throwsA(
+          isA<ApiServerError>()
+              .having((e) => e.statusCode, 'statusCode', 500)
+              .having((e) => e.message, 'message', 'Boom interno'),
+        ),
+      );
+    },
+  );
+
+  test('maps a 401 response to ApiAuthError', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('GET', '/api/v1/tasks', {
+      'error': 'Sessione scaduta.',
+    }, statusCode: 401);
+    final repo = TaskRepository(apiWith(adapter));
+
+    await expectLater(
+      repo.fetchTasks(),
+      throwsA(
+        isA<ApiAuthError>().having(
+          (e) => e.message,
+          'message',
+          'Sessione scaduta.',
+        ),
+      ),
+    );
+  });
+
+  test('maps a connection failure to ApiNetworkError', () async {
+    final api = YuvomiApi(
+      baseUrl: 'http://test.local',
+      sessions: SessionManager(InMemoryStorage()),
+    );
+    api.dio.httpClientAdapter = _ThrowingAdapter();
+    final repo = TaskRepository(api);
+
+    await expectLater(repo.fetchTasks(), throwsA(isA<ApiNetworkError>()));
+  });
+}
+
+/// Adapter che simula un server irraggiungibile.
+final class _ThrowingAdapter implements HttpClientAdapter {
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) {
+    throw DioException(
+      requestOptions: options,
+      type: DioExceptionType.connectionError,
+      message: 'Connection refused',
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
 }

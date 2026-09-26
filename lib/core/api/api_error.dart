@@ -52,3 +52,13 @@ ApiError fromDioException(DioException e) {
         : 'Errore del server (HTTP $statusCode).',
   );
 }
+
+/// Esegue [call] traducendo ogni [DioException] in un [ApiError]: i layer
+/// sopra (provider, UI) non devono mai vedere i tipi di Dio.
+Future<T> mapApiErrors<T>(Future<T> Function() call) async {
+  try {
+    return await call();
+  } on DioException catch (e) {
+    throw fromDioException(e);
+  }
+}

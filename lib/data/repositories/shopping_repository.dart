@@ -1,3 +1,4 @@
+import 'package:yuvomigo/core/api/api_error.dart';
 import 'package:yuvomigo/core/api/yuvomi_api.dart';
 import 'package:yuvomigo/features/shopping/shopping_models.dart';
 
@@ -26,38 +27,46 @@ base class ShoppingRepository {
     return const <Map<String, dynamic>>[];
   }
 
-  Future<List<ShoppingList>> fetchLists() async {
-    final response = await _api.dio.get<Map<String, dynamic>>(
-      '/api/v1/shopping',
-    );
-    return _dataList(response.data).map(ShoppingList.fromJson).toList();
+  Future<List<ShoppingList>> fetchLists() {
+    return mapApiErrors(() async {
+      final response = await _api.dio.get<Map<String, dynamic>>(
+        '/api/v1/shopping',
+      );
+      return _dataList(response.data).map(ShoppingList.fromJson).toList();
+    });
   }
 
-  Future<ShoppingList> createList(String name) async {
-    final response = await _api.dio.post<Map<String, dynamic>>(
-      '/api/v1/shopping',
-      data: {'name': name},
-    );
-    return ShoppingList.fromJson(_data(response.data));
+  Future<ShoppingList> createList(String name) {
+    return mapApiErrors(() async {
+      final response = await _api.dio.post<Map<String, dynamic>>(
+        '/api/v1/shopping',
+        data: {'name': name},
+      );
+      return ShoppingList.fromJson(_data(response.data));
+    });
   }
 
-  Future<ShoppingList> renameList(int id, String name) async {
-    final response = await _api.dio.put<Map<String, dynamic>>(
-      '/api/v1/shopping/$id',
-      data: {'name': name},
-    );
-    return ShoppingList.fromJson(_data(response.data));
+  Future<ShoppingList> renameList(int id, String name) {
+    return mapApiErrors(() async {
+      final response = await _api.dio.put<Map<String, dynamic>>(
+        '/api/v1/shopping/$id',
+        data: {'name': name},
+      );
+      return ShoppingList.fromJson(_data(response.data));
+    });
   }
 
-  Future<void> deleteList(int id) async {
-    await _api.dio.delete<void>('/api/v1/shopping/$id');
+  Future<void> deleteList(int id) {
+    return mapApiErrors(() => _api.dio.delete<void>('/api/v1/shopping/$id'));
   }
 
-  Future<List<ShoppingItem>> fetchItems(int listId) async {
-    final response = await _api.dio.get<Map<String, dynamic>>(
-      '/api/v1/shopping/$listId/items',
-    );
-    return _dataList(response.data).map(ShoppingItem.fromJson).toList();
+  Future<List<ShoppingItem>> fetchItems(int listId) {
+    return mapApiErrors(() async {
+      final response = await _api.dio.get<Map<String, dynamic>>(
+        '/api/v1/shopping/$listId/items',
+      );
+      return _dataList(response.data).map(ShoppingItem.fromJson).toList();
+    });
   }
 
   Future<ShoppingItem> addItem(
@@ -65,27 +74,33 @@ base class ShoppingRepository {
     required String name,
     String? quantity,
     String? category,
-  }) async {
-    final response = await _api.dio.post<Map<String, dynamic>>(
-      '/api/v1/shopping/$listId/items',
-      data: {
-        'name': name,
-        if (quantity != null && quantity.isNotEmpty) 'quantity': quantity,
-        if (category != null && category.isNotEmpty) 'category': category,
-      },
-    );
-    return ShoppingItem.fromJson(_data(response.data));
+  }) {
+    return mapApiErrors(() async {
+      final response = await _api.dio.post<Map<String, dynamic>>(
+        '/api/v1/shopping/$listId/items',
+        data: {
+          'name': name,
+          if (quantity != null && quantity.isNotEmpty) 'quantity': quantity,
+          if (category != null && category.isNotEmpty) 'category': category,
+        },
+      );
+      return ShoppingItem.fromJson(_data(response.data));
+    });
   }
 
-  Future<ShoppingItem> toggleItem(int itemId, bool isChecked) async {
-    final response = await _api.dio.patch<Map<String, dynamic>>(
-      '/api/v1/shopping/items/$itemId',
-      data: {'is_checked': isChecked ? 1 : 0},
-    );
-    return ShoppingItem.fromJson(_data(response.data));
+  Future<ShoppingItem> toggleItem(int itemId, bool isChecked) {
+    return mapApiErrors(() async {
+      final response = await _api.dio.patch<Map<String, dynamic>>(
+        '/api/v1/shopping/items/$itemId',
+        data: {'is_checked': isChecked ? 1 : 0},
+      );
+      return ShoppingItem.fromJson(_data(response.data));
+    });
   }
 
-  Future<void> deleteItem(int itemId) async {
-    await _api.dio.delete<void>('/api/v1/shopping/items/$itemId');
+  Future<void> deleteItem(int itemId) {
+    return mapApiErrors(
+      () => _api.dio.delete<void>('/api/v1/shopping/items/$itemId'),
+    );
   }
 }

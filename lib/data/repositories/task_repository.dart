@@ -1,3 +1,4 @@
+import 'package:yuvomigo/core/api/api_error.dart';
 import 'package:yuvomigo/core/api/yuvomi_api.dart';
 import 'package:yuvomigo/features/tasks/task_models.dart';
 
@@ -11,22 +12,24 @@ base class TaskRepository {
   final YuvomiApi _api;
 
   /// Task aperte (default) — `status` opzionale.
-  Future<List<Task>> fetchTasks({String status = 'open'}) async {
-    final res = await _api.dio.get<dynamic>(
-      '/api/v1/tasks',
-      queryParameters: {'status': status},
-    );
-    final data = (res.data is Map)
-        ? (res.data as Map<String, dynamic>)['data']
-        : res.data;
-    // `data` assente/non-lista (es. risposta inattesa con 200): lista vuota
-    // invece di un TypeError che oscura l'errore vero.
-    final raw = (data as List<dynamic>?) ?? const <dynamic>[];
-    final list = raw
-        .map((e) => Task.fromJson(e as Map<String, dynamic>))
-        .toList();
-    list.sort(compareTasksByDueDate);
-    return list;
+  Future<List<Task>> fetchTasks({String status = 'open'}) {
+    return mapApiErrors(() async {
+      final res = await _api.dio.get<dynamic>(
+        '/api/v1/tasks',
+        queryParameters: {'status': status},
+      );
+      final data = (res.data is Map)
+          ? (res.data as Map<String, dynamic>)['data']
+          : res.data;
+      // `data` assente/non-lista (es. risposta inattesa con 200): lista vuota
+      // invece di un TypeError che oscura l'errore vero.
+      final raw = (data as List<dynamic>?) ?? const <dynamic>[];
+      final list = raw
+          .map((e) => Task.fromJson(e as Map<String, dynamic>))
+          .toList();
+      list.sort(compareTasksByDueDate);
+      return list;
+    });
   }
 
   Future<Task> createTask({
@@ -34,37 +37,41 @@ base class TaskRepository {
     String? dueDate,
     String priority = 'none',
     String? category,
-  }) async {
-    final res = await _api.dio.post<dynamic>(
-      '/api/v1/tasks',
-      // Solo i campi valorizzati: i null espliciti non aggiungono nulla
-      // e alcuni endpoint li interpretano come "azzera".
-      data: {
-        'title': title,
-        'priority': priority,
-        'due_date': ?dueDate,
-        'category': ?category,
-      },
-    );
-    final data = (res.data is Map)
-        ? (res.data as Map<String, dynamic>)['data']
-        : res.data;
-    return Task.fromJson(data as Map<String, dynamic>);
+  }) {
+    return mapApiErrors(() async {
+      final res = await _api.dio.post<dynamic>(
+        '/api/v1/tasks',
+        // Solo i campi valorizzati: i null espliciti non aggiungono nulla
+        // e alcuni endpoint li interpretano come "azzera".
+        data: {
+          'title': title,
+          'priority': priority,
+          'due_date': ?dueDate,
+          'category': ?category,
+        },
+      );
+      final data = (res.data is Map)
+          ? (res.data as Map<String, dynamic>)['data']
+          : res.data;
+      return Task.fromJson(data as Map<String, dynamic>);
+    });
   }
 
   /// Cambia lo status (open/done/in_progress).
-  Future<Task> setStatus(int id, TaskStatus status) async {
-    final res = await _api.dio.patch<dynamic>(
-      '/api/v1/tasks/$id/status',
-      data: {'status': status.wire},
-    );
-    final data = (res.data is Map)
-        ? (res.data as Map<String, dynamic>)['data']
-        : res.data;
-    return Task.fromJson(data as Map<String, dynamic>);
+  Future<Task> setStatus(int id, TaskStatus status) {
+    return mapApiErrors(() async {
+      final res = await _api.dio.patch<dynamic>(
+        '/api/v1/tasks/$id/status',
+        data: {'status': status.wire},
+      );
+      final data = (res.data is Map)
+          ? (res.data as Map<String, dynamic>)['data']
+          : res.data;
+      return Task.fromJson(data as Map<String, dynamic>);
+    });
   }
 
-  Future<void> deleteTask(int id) async {
-    await _api.dio.delete<void>('/api/v1/tasks/$id');
+  Future<void> deleteTask(int id) {
+    return mapApiErrors(() => _api.dio.delete<void>('/api/v1/tasks/$id'));
   }
 }
