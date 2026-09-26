@@ -12,6 +12,21 @@ base class NoteRepository {
 
   final YuvomiApi _api;
 
+  /// Categorie visibili (personali + household).
+  Future<List<NoteCategory>> fetchCategories() {
+    return mapApiErrors(() async {
+      final res = await _api.dio.get<Map<String, dynamic>>(
+        '/api/v1/notes/categories',
+      );
+      final data = res.data?['data'];
+      final raw = data is List ? data : const <dynamic>[];
+      return raw
+          .whereType<Map<String, dynamic>>()
+          .map(NoteCategory.fromJson)
+          .toList();
+    });
+  }
+
   Future<List<Note>> fetchNotes() {
     return mapApiErrors(() async {
       final res = await _api.dio.get<dynamic>('/api/v1/notes');
@@ -46,6 +61,7 @@ base class NoteRepository {
     String? title,
     String? color,
     bool pinned = false,
+    List<int>? categoryIds,
   }) {
     return mapApiErrors(() async {
       final res = await _api.dio.post<dynamic>(
@@ -55,6 +71,7 @@ base class NoteRepository {
           'title': title,
           'color': color,
           'pinned': pinned ? 1 : 0,
+          'category_ids': ?categoryIds,
         },
       );
       final data = (res.data is Map)
@@ -74,6 +91,7 @@ base class NoteRepository {
     String? title,
     String? color,
     bool? pinned,
+    List<int>? categoryIds,
   }) {
     return mapApiErrors(() async {
       final res = await _api.dio.put<dynamic>(
@@ -83,6 +101,7 @@ base class NoteRepository {
           'title': ?title,
           'color': ?color,
           if (pinned case final p?) 'pinned': p ? 1 : 0,
+          'category_ids': ?categoryIds,
         },
       );
       final data = (res.data is Map)

@@ -29,6 +29,14 @@ final notesProvider =
       NotesNotifier.new,
     );
 
+/// Categorie delle note (caricate dal dialog di modifica).
+final noteCategoriesProvider = FutureProvider.autoDispose<List<NoteCategory>>((
+  ref,
+) async {
+  final repo = ref.watch(noteRepositoryProvider);
+  return repo.fetchCategories();
+});
+
 final class NotesNotifier extends Notifier<AsyncValue<List<Note>>> {
   bool _loading = false;
 
@@ -71,6 +79,7 @@ final class NotesNotifier extends Notifier<AsyncValue<List<Note>>> {
     String? title,
     String? color,
     bool pinned = false,
+    List<int>? categoryIds,
   }) async {
     final repo = ref.read(noteRepositoryProvider);
     ref.read(notesActionErrorProvider.notifier).clear();
@@ -80,6 +89,7 @@ final class NotesNotifier extends Notifier<AsyncValue<List<Note>>> {
         title: title,
         color: color,
         pinned: pinned,
+        categoryIds: categoryIds,
       );
       if (!ref.mounted) return false;
       final notes = sortNotesPinnedFirst([
@@ -102,6 +112,7 @@ final class NotesNotifier extends Notifier<AsyncValue<List<Note>>> {
     String? title,
     String? color,
     bool? pinned,
+    List<int>? categoryIds,
   }) async {
     final repo = ref.read(noteRepositoryProvider);
     ref.read(notesActionErrorProvider.notifier).clear();
@@ -112,6 +123,7 @@ final class NotesNotifier extends Notifier<AsyncValue<List<Note>>> {
         title: title,
         color: color,
         pinned: pinned,
+        categoryIds: categoryIds,
       );
       if (!ref.mounted) return false;
       final prev = state.value ?? const <Note>[];

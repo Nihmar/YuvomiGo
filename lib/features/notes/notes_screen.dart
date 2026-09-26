@@ -78,7 +78,11 @@ final class NotesScreen extends ConsumerWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   subtitle: Text(
-                    hasTitle ? firstLine : '',
+                    [
+                      if (hasTitle) firstLine,
+                      if (note.categories.isNotEmpty)
+                        note.categories.map((c) => c.name).join(', '),
+                    ].join(' · '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -176,6 +180,7 @@ final class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
   bool _pinned = false;
   bool _busy = false;
   String? _color;
+  late Set<int> _categoryIds;
 
   @override
   void initState() {
@@ -184,6 +189,7 @@ final class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
     _content.text = widget.note?.content ?? '';
     _pinned = widget.note?.pinned ?? false;
     _color = widget.note?.color;
+    _categoryIds = widget.note?.categories.map((c) => c.id).toSet() ?? {};
   }
 
   @override
@@ -196,49 +202,88 @@ final class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.note != null;
+    final categories =
+        ref.watch(noteCategoriesProvider).value ?? const <NoteCategory>[];
     return AlertDialog(
       title: Text(isEdit ? 'Modifica nota' : 'Nuova nota'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _title,
-            decoration: const InputDecoration(labelText: 'Titolo (opzionale)'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _content,
-            maxLines: 5,
-            decoration: const InputDecoration(labelText: 'Contenuto'),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Checkbox(
-                value: _pinned,
-                onChanged: (v) => setState(() => _pinned = v ?? false),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _title,
+              decoration: const InputDecoration(
+                labelText: 'Titolo (opzionale)',
               ),
-              const Text('Fissa in alto'),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text('Colore', style: Theme.of(context).textTheme.bodySmall),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: [
-              for (final hex in _colors)
-                _ColorDot(
-                  hex: hex,
-                  selected: _color?.toUpperCase() == hex,
-                  onTap: _busy ? null : () => setState(() => _color = hex),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _content,
+              maxLines: 5,
+              decoration: const InputDecoration(labelText: 'Contenuto'),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Checkbox(
+                  value: _pinned,
+                  onChanged: (v) => setState(() => _pinned = v ?? false),
                 ),
+                const Text('Fissa in alto'),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (categories.isNotEmpty) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Categorie',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 6,
+                children: [
+                  for (final category in categories)
+                    FilterChip(
+                      label: Text(category.name),
+                      selected: _categoryIds.contains(category.id),
+                      onSelected: _busy
+                          ? null
+                          : (selected) => setState(() {
+                              if (selected) {
+                                _categoryIds.add(category.id);
+                              } else {
+                                _categoryIds.remove(category.id);
+                              }
+                            }),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
             ],
-          ),
-        ],
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Colore',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final hex in _colors)
+                  _ColorDot(
+                    hex: hex,
+                    selected: _color?.toUpperCase() == hex,
+                    onTap: _busy ? null : () => setState(() => _color = hex),
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(
@@ -280,6 +325,7 @@ final class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
             title: title,
             color: _color,
             pinned: _pinned,
+            categoryIds: _categoryIds.toList(),
           )
         : await notifier.update(
             note.id,
@@ -287,6 +333,7 @@ final class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
             title: title,
             color: _color,
             pinned: _pinned,
+            categoryIds: _categoryIds.toList(),
           );
     if (!mounted) return;
     if (!success) {

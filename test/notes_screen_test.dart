@@ -23,13 +23,42 @@ final class FakeNoteRepository extends NoteRepository {
       );
 
   final List<Note> notes = [
-    Note(id: 1, content: 'lista', title: 'Spesa'),
+    Note(
+      id: 1,
+      content: 'lista',
+      title: 'Spesa',
+      categories: const [
+        NoteCategory(id: 1, name: 'Casa', scope: 'household', sortOrder: 0),
+      ],
+    ),
     Note(id: 2, content: 'solo contenuto'),
   ];
   int _nextId = 100;
 
+  List<int>? lastCreateCategoryIds;
+  List<int>? lastUpdateCategoryIds;
+
+  static const _allCategories = [
+    NoteCategory(id: 1, name: 'Casa', scope: 'household', sortOrder: 0),
+    NoteCategory(
+      id: 2,
+      name: 'Lavoro',
+      scope: 'personal',
+      ownerUserId: 1,
+      sortOrder: 1,
+    ),
+  ];
+
   @override
   Future<List<Note>> fetchNotes() async => notes.toList();
+
+  @override
+  Future<List<NoteCategory>> fetchCategories() async => _allCategories;
+
+  List<NoteCategory> _byIds(List<int>? ids) => [
+    for (final category in _allCategories)
+      if (ids?.contains(category.id) == true) category,
+  ];
 
   @override
   Future<Note> createNote({
@@ -37,13 +66,16 @@ final class FakeNoteRepository extends NoteRepository {
     String? title,
     String? color,
     bool pinned = false,
+    List<int>? categoryIds,
   }) {
+    lastCreateCategoryIds = categoryIds;
     final n = Note(
       id: _nextId++,
       content: content,
       title: title,
       color: color,
       pinned: pinned,
+      categories: _byIds(categoryIds),
     );
     notes.add(n);
     return Future.value(n);
@@ -56,7 +88,9 @@ final class FakeNoteRepository extends NoteRepository {
     String? title,
     String? color,
     bool? pinned,
+    List<int>? categoryIds,
   }) {
+    lastUpdateCategoryIds = categoryIds;
     final idx = notes.indexWhere((n) => n.id == id);
     final old = notes[idx];
     final updated = Note(
@@ -65,7 +99,7 @@ final class FakeNoteRepository extends NoteRepository {
       title: title,
       color: color ?? old.color,
       pinned: pinned ?? old.pinned,
-      categories: old.categories,
+      categories: categoryIds == null ? old.categories : _byIds(categoryIds),
     );
     notes[idx] = updated;
     return Future.value(updated);
@@ -83,6 +117,7 @@ final class FailingNoteRepository extends FakeNoteRepository {
     String? title,
     String? color,
     bool pinned = false,
+    List<int>? categoryIds,
   }) => Future.error(Exception('offline'));
 }
 
@@ -107,6 +142,8 @@ void main() {
     // La nota con titolo mostra il titolo; quella senza mostra la 1ª riga.
     expect(find.text('Spesa'), findsOneWidget);
     expect(find.text('solo contenuto'), findsWidgets);
+    // Le categorie compaiono nella sottotitolo.
+    expect(find.textContaining('Casa'), findsWidgets);
   });
 
   testWidgets('Creating a note adds it', (tester) async {
@@ -133,6 +170,8 @@ void main() {
     await tester.tap(find.byIcon(Icons.add));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).at(1), 'nota blu');
+    await tester.ensureVisible(find.byKey(const ValueKey('note-color-#BBDEFB')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('note-color-#BBDEFB')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Salva'));
@@ -188,6 +227,24 @@ void main() {
     expect(find.text('Nuova nota'), findsOneWidget);
     expect(find.text('bozza importante'), findsWidgets);
     expect(find.textContaining('Operazione non riuscita'), findsOneWidget);
+  });
+
+  testWidgets('The editor can assign categories', (tester) async {
+    final repo = FakeNoteRepository();
+    await tester.pumpWidget(_pump(const NotesScreen(), repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).at(1), 'nota nuova');
+    await tester.ensureVisible(find.widgetWithText(FilterChip, 'Casa'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilterChip, 'Casa'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Salva'));
+    await tester.pumpAndSettle();
+
+    expect(repo.lastCreateCategoryIds, contains(1));
   });
 
   test('sortNotesPinnedFirst keeps the relative order', () {

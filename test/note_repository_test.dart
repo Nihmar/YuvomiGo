@@ -91,17 +91,56 @@ void main() {
     expect(adapter.requests.first.data['content'], 'ciao');
   });
 
+  test('fetchCategories parses the list', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('GET', '/api/v1/notes/categories', {
+      'data': [
+        {
+          'id': 1,
+          'name': 'Casa',
+          'scope': 'household',
+          'owner_user_id': null,
+          'sort_order': 0,
+        },
+      ],
+    });
+    final repo = NoteRepository(apiWith(adapter));
+    final categories = await repo.fetchCategories();
+
+    expect(categories, hasLength(1));
+    expect(categories.first.name, 'Casa');
+    expect(categories.first.scope, 'household');
+  });
+
+  test('createNote sends category_ids when provided', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('POST', '/api/v1/notes', {
+      'data': {'id': 5, 'content': 'ciao', 'pinned': 0},
+    });
+    final repo = NoteRepository(apiWith(adapter));
+    await repo.createNote(content: 'ciao', categoryIds: const [1, 2]);
+
+    expect(adapter.requests.first.data['category_ids'], [1, 2]);
+  });
+
   test('updateNote sends only the provided fields', () async {
     final adapter = _RoutingAdapter();
     adapter.addRoute('PUT', '/api/v1/notes/9', {
       'data': {'id': 9, 'content': 'x', 'title': 'T', 'pinned': 1},
     });
     final repo = NoteRepository(apiWith(adapter));
-    final updated = await repo.updateNote(9, pinned: true);
+    final updated = await repo.updateNote(
+      9,
+      pinned: true,
+      categoryIds: const [3],
+    );
 
     // Il PUT sovrascrive le chiavi presenti: il toggle del pin non deve
     // mandare title/content null (azzererebbero il titolo sul server).
-    expect(adapter.requests.first.data, {'pinned': 1});
+    expect(adapter.requests.first.data, {
+      'pinned': 1,
+      'category_ids': [3],
+    });
     expect(updated.pinned, isTrue);
     expect(updated.title, 'T');
   });
