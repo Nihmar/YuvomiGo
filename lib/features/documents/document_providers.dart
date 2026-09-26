@@ -47,6 +47,7 @@ final class DocumentsNotifier extends Notifier<AsyncValue<List<DocumentItem>>> {
   Future<void> refresh() => _fetch(showLoading: false);
 
   Future<void> _fetch({required bool showLoading}) async {
+    if (!ref.mounted) return;
     if (_loading) return;
     _loading = true;
     final repo = ref.read(documentRepositoryProvider);
@@ -76,6 +77,7 @@ final class DocumentsNotifier extends Notifier<AsyncValue<List<DocumentItem>>> {
     String category = 'other',
     String? description,
   }) async {
+    if (!ref.mounted) return false;
     final repo = ref.read(documentRepositoryProvider);
     ref.read(documentsActionErrorProvider.notifier).clear();
     try {
@@ -98,6 +100,7 @@ final class DocumentsNotifier extends Notifier<AsyncValue<List<DocumentItem>>> {
   }
 
   Future<void> archive(int id) async {
+    if (!ref.mounted) return;
     final repo = ref.read(documentRepositoryProvider);
     ref.read(documentsActionErrorProvider.notifier).clear();
     try {

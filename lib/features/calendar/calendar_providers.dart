@@ -46,6 +46,7 @@ final class CalendarEventsNotifier
   Future<void> refresh() => _fetch(showLoading: false);
 
   Future<void> _fetch({required bool showLoading}) async {
+    if (!ref.mounted) return;
     if (_loading) return;
     _loading = true;
     final repo = ref.read(calendarRepositoryProvider);

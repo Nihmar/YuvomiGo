@@ -45,6 +45,7 @@ final class BirthdaysNotifier extends Notifier<AsyncValue<List<Birthday>>> {
   Future<void> refresh() => _fetch(showLoading: false);
 
   Future<void> _fetch({required bool showLoading}) async {
+    if (!ref.mounted) return;
     if (_loading) return;
     _loading = true;
     final repo = ref.read(birthdayRepositoryProvider);
@@ -71,6 +72,7 @@ final class BirthdaysNotifier extends Notifier<AsyncValue<List<Birthday>>> {
     required String birthDate,
     String? notes,
   }) async {
+    if (!ref.mounted) return false;
     final repo = ref.read(birthdayRepositoryProvider);
     ref.read(birthdaysActionErrorProvider.notifier).clear();
     try {
@@ -92,6 +94,7 @@ final class BirthdaysNotifier extends Notifier<AsyncValue<List<Birthday>>> {
     required String birthDate,
     String? notes,
   }) async {
+    if (!ref.mounted) return false;
     final repo = ref.read(birthdayRepositoryProvider);
     ref.read(birthdaysActionErrorProvider.notifier).clear();
     try {
@@ -112,6 +115,7 @@ final class BirthdaysNotifier extends Notifier<AsyncValue<List<Birthday>>> {
   }
 
   Future<void> remove(int id) async {
+    if (!ref.mounted) return;
     final repo = ref.read(birthdayRepositoryProvider);
     ref.read(birthdaysActionErrorProvider.notifier).clear();
     try {

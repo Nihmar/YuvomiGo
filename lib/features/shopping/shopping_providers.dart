@@ -47,6 +47,7 @@ class ShoppingListsNotifier extends Notifier<AsyncValue<List<ShoppingList>>> {
   Future<void> refresh() => _fetch(showLoading: false);
 
   Future<void> _fetch({required bool showLoading}) async {
+    if (!ref.mounted) return;
     if (_loading) return;
     _loading = true;
     final repo = ref.read(shoppingRepositoryProvider);
@@ -68,6 +69,7 @@ class ShoppingListsNotifier extends Notifier<AsyncValue<List<ShoppingList>>> {
   }
 
   Future<void> add(String name) async {
+    if (!ref.mounted) return;
     final repo = ref.read(shoppingRepositoryProvider);
     _errors(ref).clear();
     try {
@@ -82,6 +84,7 @@ class ShoppingListsNotifier extends Notifier<AsyncValue<List<ShoppingList>>> {
   }
 
   Future<void> rename(int id, String name) async {
+    if (!ref.mounted) return;
     final repo = ref.read(shoppingRepositoryProvider);
     _errors(ref).clear();
     try {
@@ -96,6 +99,7 @@ class ShoppingListsNotifier extends Notifier<AsyncValue<List<ShoppingList>>> {
   }
 
   Future<void> remove(int id) async {
+    if (!ref.mounted) return;
     final prev = state.value ?? const <ShoppingList>[];
     final repo = ref.read(shoppingRepositoryProvider);
     _errors(ref).clear();
@@ -112,6 +116,7 @@ class ShoppingListsNotifier extends Notifier<AsyncValue<List<ShoppingList>>> {
   /// Aggiorna i conteggi di [listId] senza rileggere dal server: dopo una
   /// modifica agli articoli la summary della lista deve restare coerente.
   void applyItemDelta(int listId, {int totalDelta = 0, int checkedDelta = 0}) {
+    if (!ref.mounted) return;
     final prev = state.value;
     if (prev == null || (totalDelta == 0 && checkedDelta == 0)) return;
     state = AsyncData([
@@ -152,6 +157,7 @@ class ShoppingItemsNotifier extends Notifier<AsyncValue<List<ShoppingItem>>> {
   Future<void> refresh() => _fetch(showLoading: false);
 
   Future<void> _fetch({required bool showLoading}) async {
+    if (!ref.mounted) return;
     if (_loading) return;
     _loading = true;
     final repo = ref.read(shoppingRepositoryProvider);
@@ -173,6 +179,7 @@ class ShoppingItemsNotifier extends Notifier<AsyncValue<List<ShoppingItem>>> {
   }
 
   Future<bool> add(String name, {String? quantity, String? category}) async {
+    if (!ref.mounted) return false;
     final repo = ref.read(shoppingRepositoryProvider);
     _errors(ref).clear();
     try {
@@ -197,6 +204,7 @@ class ShoppingItemsNotifier extends Notifier<AsyncValue<List<ShoppingItem>>> {
   }
 
   Future<void> toggle(int itemId, bool isChecked) async {
+    if (!ref.mounted) return;
     final repo = ref.read(shoppingRepositoryProvider);
     final wasChecked = _isChecked(itemId);
     _errors(ref).clear();
@@ -217,6 +225,7 @@ class ShoppingItemsNotifier extends Notifier<AsyncValue<List<ShoppingItem>>> {
   }
 
   Future<void> remove(int itemId) async {
+    if (!ref.mounted) return;
     final prev = state.value ?? const <ShoppingItem>[];
     final wasChecked = _isChecked(itemId);
     final repo = ref.read(shoppingRepositoryProvider);

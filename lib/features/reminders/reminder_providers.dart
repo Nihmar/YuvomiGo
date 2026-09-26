@@ -45,6 +45,7 @@ final class RemindersNotifier extends Notifier<AsyncValue<List<Reminder>>> {
   Future<void> refresh() => _fetch(showLoading: false);
 
   Future<void> _fetch({required bool showLoading}) async {
+    if (!ref.mounted) return;
     if (_loading) return;
     _loading = true;
     final repo = ref.read(reminderRepositoryProvider);
@@ -67,6 +68,7 @@ final class RemindersNotifier extends Notifier<AsyncValue<List<Reminder>>> {
 
   /// Archivia ("fatto") il promemoria; sparisce dalla lista.
   Future<void> dismiss(int id) async {
+    if (!ref.mounted) return;
     final repo = ref.read(reminderRepositoryProvider);
     ref.read(remindersActionErrorProvider.notifier).clear();
     try {
@@ -80,6 +82,7 @@ final class RemindersNotifier extends Notifier<AsyncValue<List<Reminder>>> {
   }
 
   Future<void> remove(int id) async {
+    if (!ref.mounted) return;
     final repo = ref.read(reminderRepositoryProvider);
     ref.read(remindersActionErrorProvider.notifier).clear();
     try {

@@ -69,4 +69,19 @@ void main() {
     expect(repo.calls, 2);
     expect(container.read(tasksProvider).value, hasLength(1));
   });
+
+  test('disposing right after build does not throw', () async {
+    final repo = _FlakyTaskRepository();
+    final container = ProviderContainer.test(
+      overrides: [taskRepositoryProvider.overrideWithValue(repo)],
+    );
+
+    // Il microtask di caricamento parte dopo il build: se il provider viene
+    // smontato subito, la guardia deve fermarlo senza errori asincroni.
+    container.read(tasksProvider);
+    container.dispose();
+    await pumpEventQueue();
+
+    expect(repo.calls, lessThanOrEqualTo(1));
+  });
 }

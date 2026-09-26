@@ -44,6 +44,7 @@ final class TasksNotifier extends Notifier<AsyncValue<List<Task>>> {
   Future<void> refresh() => _fetch(showLoading: false);
 
   Future<void> _fetch({required bool showLoading}) async {
+    if (!ref.mounted) return;
     if (_loading) return;
     _loading = true;
     final repo = ref.read(taskRepositoryProvider);
@@ -72,6 +73,7 @@ final class TasksNotifier extends Notifier<AsyncValue<List<Task>>> {
     String? dueDate,
     String priority = 'none',
   }) async {
+    if (!ref.mounted) return false;
     final repo = ref.read(taskRepositoryProvider);
     ref.read(tasksActionErrorProvider.notifier).clear();
     try {
@@ -94,6 +96,7 @@ final class TasksNotifier extends Notifier<AsyncValue<List<Task>>> {
   }
 
   Future<void> toggle(int id) async {
+    if (!ref.mounted) return;
     final prev = state.value ?? const <Task>[];
     final current = prev.firstWhere(
       (t) => t.id == id,
@@ -120,6 +123,7 @@ final class TasksNotifier extends Notifier<AsyncValue<List<Task>>> {
   }
 
   Future<void> remove(int id) async {
+    if (!ref.mounted) return;
     final prev = state.value ?? const <Task>[];
     final repo = ref.read(taskRepositoryProvider);
     ref.read(tasksActionErrorProvider.notifier).clear();

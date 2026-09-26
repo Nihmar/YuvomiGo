@@ -47,6 +47,7 @@ final class InventoryNotifier
   Future<void> refresh() => _fetch(showLoading: false);
 
   Future<void> _fetch({required bool showLoading}) async {
+    if (!ref.mounted) return;
     if (_loading) return;
     _loading = true;
     final repo = ref.read(inventoryRepositoryProvider);
@@ -83,6 +84,7 @@ final class InventoryNotifier
     String status = 'active',
     String? notes,
   }) async {
+    if (!ref.mounted) return false;
     final repo = ref.read(inventoryRepositoryProvider);
     ref.read(inventoryActionErrorProvider.notifier).clear();
     try {
@@ -128,6 +130,7 @@ final class InventoryNotifier
     String status = 'active',
     String? notes,
   }) async {
+    if (!ref.mounted) return false;
     final repo = ref.read(inventoryRepositoryProvider);
     ref.read(inventoryActionErrorProvider.notifier).clear();
     try {
@@ -158,6 +161,7 @@ final class InventoryNotifier
   }
 
   Future<void> remove(int id) async {
+    if (!ref.mounted) return;
     final repo = ref.read(inventoryRepositoryProvider);
     ref.read(inventoryActionErrorProvider.notifier).clear();
     try {

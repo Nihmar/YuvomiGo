@@ -43,6 +43,7 @@ final class PantryNotifier extends Notifier<AsyncValue<PantryData>> {
   Future<void> refresh() => _fetch(showLoading: false);
 
   Future<void> _fetch({required bool showLoading}) async {
+    if (!ref.mounted) return;
     if (_loading) return;
     _loading = true;
     final repo = ref.read(pantryRepositoryProvider);
@@ -74,6 +75,7 @@ final class PantryNotifier extends Notifier<AsyncValue<PantryData>> {
     double? minQuantity,
     String? notes,
   }) async {
+    if (!ref.mounted) return false;
     final repo = ref.read(pantryRepositoryProvider);
     ref.read(pantryActionErrorProvider.notifier).clear();
     try {
@@ -109,6 +111,7 @@ final class PantryNotifier extends Notifier<AsyncValue<PantryData>> {
     double? minQuantity,
     String? notes,
   }) async {
+    if (!ref.mounted) return false;
     final repo = ref.read(pantryRepositoryProvider);
     ref.read(pantryActionErrorProvider.notifier).clear();
     try {
@@ -134,6 +137,7 @@ final class PantryNotifier extends Notifier<AsyncValue<PantryData>> {
   }
 
   Future<void> remove(int id) async {
+    if (!ref.mounted) return;
     final repo = ref.read(pantryRepositoryProvider);
     ref.read(pantryActionErrorProvider.notifier).clear();
     try {

@@ -62,6 +62,7 @@ final class WastePickupsNotifier
   Future<void> refresh() => _fetch(showLoading: false);
 
   Future<void> _fetch({required bool showLoading}) async {
+    if (!ref.mounted) return;
     if (_loading) return;
     _loading = true;
     final repo = ref.read(wasteRepositoryProvider);
@@ -88,6 +89,7 @@ final class WastePickupsNotifier
     required String date,
     String? note,
   }) async {
+    if (!ref.mounted) return false;
     final repo = ref.read(wasteRepositoryProvider);
     ref.read(wasteActionErrorProvider.notifier).clear();
     try {
@@ -104,6 +106,7 @@ final class WastePickupsNotifier
   }
 
   Future<bool> update(int id, {required String date, String? note}) async {
+    if (!ref.mounted) return false;
     final repo = ref.read(wasteRepositoryProvider);
     ref.read(wasteActionErrorProvider.notifier).clear();
     try {
@@ -120,6 +123,7 @@ final class WastePickupsNotifier
   }
 
   Future<void> remove(int id) async {
+    if (!ref.mounted) return;
     final repo = ref.read(wasteRepositoryProvider);
     ref.read(wasteActionErrorProvider.notifier).clear();
     try {

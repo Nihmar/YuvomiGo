@@ -49,6 +49,7 @@ final class NoteCategoriesNotifier
   Future<void> load() => _fetch(showLoading: true);
 
   Future<void> _fetch({required bool showLoading}) async {
+    if (!ref.mounted) return;
     if (_loading) return;
     _loading = true;
     final repo = ref.read(noteRepositoryProvider);
@@ -71,6 +72,7 @@ final class NoteCategoriesNotifier
 
   /// Crea la categoria; ritorna false se fallisce (dialog aperto).
   Future<bool> add(String name, {String scope = 'personal'}) async {
+    if (!ref.mounted) return false;
     final repo = ref.read(noteRepositoryProvider);
     ref.read(notesActionErrorProvider.notifier).clear();
     try {
@@ -86,6 +88,7 @@ final class NoteCategoriesNotifier
   }
 
   Future<bool> rename(int id, String name) async {
+    if (!ref.mounted) return false;
     final repo = ref.read(noteRepositoryProvider);
     ref.read(notesActionErrorProvider.notifier).clear();
     try {
@@ -102,6 +105,7 @@ final class NoteCategoriesNotifier
   }
 
   Future<void> remove(int id) async {
+    if (!ref.mounted) return;
     final repo = ref.read(noteRepositoryProvider);
     ref.read(notesActionErrorProvider.notifier).clear();
     try {
@@ -131,6 +135,7 @@ final class NotesNotifier extends Notifier<AsyncValue<List<Note>>> {
   Future<void> refresh() => _fetch(showLoading: false);
 
   Future<void> _fetch({required bool showLoading}) async {
+    if (!ref.mounted) return;
     if (_loading) return;
     _loading = true;
     final repo = ref.read(noteRepositoryProvider);
@@ -160,6 +165,7 @@ final class NotesNotifier extends Notifier<AsyncValue<List<Note>>> {
     bool pinned = false,
     List<int>? categoryIds,
   }) async {
+    if (!ref.mounted) return false;
     final repo = ref.read(noteRepositoryProvider);
     ref.read(notesActionErrorProvider.notifier).clear();
     try {
@@ -193,6 +199,7 @@ final class NotesNotifier extends Notifier<AsyncValue<List<Note>>> {
     bool? pinned,
     List<int>? categoryIds,
   }) async {
+    if (!ref.mounted) return false;
     final repo = ref.read(noteRepositoryProvider);
     ref.read(notesActionErrorProvider.notifier).clear();
     try {
@@ -218,6 +225,7 @@ final class NotesNotifier extends Notifier<AsyncValue<List<Note>>> {
   }
 
   Future<void> remove(int id) async {
+    if (!ref.mounted) return;
     final prev = state.value ?? const <Note>[];
     final repo = ref.read(noteRepositoryProvider);
     ref.read(notesActionErrorProvider.notifier).clear();
