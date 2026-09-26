@@ -15,7 +15,10 @@ extension TaskStatusX on TaskStatus {
   };
 }
 
-/// Ordinamento MVP: per due_date (null = ultime).
+/// Ordinamento della lista MVP: per due_date (null = ultime).
+///
+/// Scelta deliberata: il server ordina per stato → priorità → due_date, ma
+/// in una lista mobile "cosa scade prima" è più utile di "quanto è urgente".
 int compareTasksByDueDate(Task a, Task b) {
   final ad = a.dueDate ?? '9999-99-99';
   final bd = b.dueDate ?? '9999-99-99';
