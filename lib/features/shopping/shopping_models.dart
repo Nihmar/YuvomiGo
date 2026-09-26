@@ -60,3 +60,17 @@ int? _asInt(Object? v) => v is int ? v : (v is num ? v.toInt() : null);
 
 bool _asBool(Object? v) =>
     v == true || (v is num && v != 0) || (v is String && v == '1');
+
+/// Una categoria di spesa definita dall'utente (server: shopping_categories).
+final class ShoppingCategory {
+  const ShoppingCategory({required this.id, required this.name});
+
+  final int id;
+  final String name;
+
+  factory ShoppingCategory.fromJson(Map<String, dynamic> json) =>
+      ShoppingCategory(
+        id: _asInt(json['id']) ?? -1,
+        name: json['name'] as String? ?? '',
+      );
+}

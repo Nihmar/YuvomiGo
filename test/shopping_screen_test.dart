@@ -68,10 +68,21 @@ final class FakeShoppingRepository extends ShoppingRepository {
     String? quantity,
     String? category,
   }) {
-    final item = ShoppingItem(id: _nextId++, name: name, quantity: quantity);
+    final item = ShoppingItem(
+      id: _nextId++,
+      name: name,
+      quantity: quantity,
+      category: category ?? 'Sonstiges',
+    );
     itemsByList.putIfAbsent(listId, () => []).add(item);
     return Future.value(item);
   }
+
+  @override
+  Future<List<ShoppingCategory>> fetchCategories() async => const [
+    ShoppingCategory(id: 1, name: 'Frutta'),
+    ShoppingCategory(id: 2, name: 'Latticini'),
+  ];
 
   @override
   Future<ShoppingItem> toggleItem(int itemId, bool isChecked) {
@@ -231,6 +242,27 @@ void main() {
     expect(find.text('Uova (6)'), findsOneWidget);
     final created = repo.itemsByList[1]!.firstWhere((i) => i.name == 'Uova');
     expect(created.quantity, '6');
+  });
+
+  testWidgets('Adding an item can set a category', (tester) async {
+    final repo = FakeShoppingRepository();
+    await tester.pumpWidget(
+      _pump(const ShoppingListDetailScreen(listId: 1), repo),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'Mele');
+    await tester.tap(find.byType(DropdownButtonFormField<String?>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Frutta').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Aggiungi'));
+    await tester.pumpAndSettle();
+
+    expect(repo.itemsByList[1]!.last.name, 'Mele');
+    expect(repo.itemsByList[1]!.last.category, 'Frutta');
   });
 
   testWidgets('Failed toggle keeps the item and shows an error', (

@@ -172,7 +172,7 @@ class ShoppingItemsNotifier extends Notifier<AsyncValue<List<ShoppingItem>>> {
     }
   }
 
-  Future<void> add(String name, {String? quantity}) async {
+  Future<bool> add(String name, {String? quantity, String? category}) async {
     final repo = ref.read(shoppingRepositoryProvider);
     _errors(ref).clear();
     try {
@@ -180,16 +180,19 @@ class ShoppingItemsNotifier extends Notifier<AsyncValue<List<ShoppingItem>>> {
         listId,
         name: name,
         quantity: quantity,
+        category: category,
       );
-      if (!ref.mounted) return;
+      if (!ref.mounted) return false;
       final prev = state.value ?? const <ShoppingItem>[];
       state = AsyncData([...prev, created]);
       ref
           .read(shoppingListsProvider.notifier)
           .applyItemDelta(listId, totalDelta: 1);
+      return true;
     } catch (e) {
-      if (!ref.mounted) return;
+      if (!ref.mounted) return false;
       _errors(ref).report(e);
+      return false;
     }
   }
 
@@ -247,3 +250,10 @@ final shoppingItemsProvider = NotifierProvider.family
     .autoDispose<ShoppingItemsNotifier, AsyncValue<List<ShoppingItem>>, int>(
       (listId) => ShoppingItemsNotifier(listId),
     );
+
+/// Le categorie di spesa disponibili (caricate on demand dal dettaglio).
+final shoppingCategoriesProvider =
+    FutureProvider.autoDispose<List<ShoppingCategory>>((ref) async {
+      final repo = ref.watch(shoppingRepositoryProvider);
+      return repo.fetchCategories();
+    });

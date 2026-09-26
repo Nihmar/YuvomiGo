@@ -132,4 +132,18 @@ void main() {
     expect(created.quantity, '12');
     expect(adapter.requests.first.data, {'name': 'Uova', 'quantity': '12'});
   });
+
+  test('fetchCategories parses the list', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('GET', '/api/v1/shopping/categories', {
+      'data': [
+        {'id': 1, 'name': 'Frutta'},
+        {'id': 2, 'name': 'Latticini'},
+      ],
+    });
+    final repo = ShoppingRepository(apiWith(adapter));
+    final categories = await repo.fetchCategories();
+
+    expect(categories.map((c) => c.name), ['Frutta', 'Latticini']);
+  });
 }

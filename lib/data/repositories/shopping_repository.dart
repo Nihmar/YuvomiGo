@@ -69,6 +69,16 @@ base class ShoppingRepository {
     });
   }
 
+  /// Categorie disponibili (definite dall'utente sul server).
+  Future<List<ShoppingCategory>> fetchCategories() {
+    return mapApiErrors(() async {
+      final response = await _api.dio.get<Map<String, dynamic>>(
+        '/api/v1/shopping/categories',
+      );
+      return _dataList(response.data).map(ShoppingCategory.fromJson).toList();
+    });
+  }
+
   Future<ShoppingItem> addItem(
     int listId, {
     required String name,
