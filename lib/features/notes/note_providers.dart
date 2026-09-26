@@ -50,7 +50,9 @@ final class NotesNotifier extends Notifier<AsyncValue<List<Note>>> {
     }
   }
 
-  Future<void> add({
+  /// Crea la nota; ritorna false se il salvataggio fallisce (la UI resta
+  /// aperta e l'errore è già nello [notesActionErrorProvider]).
+  Future<bool> add({
     required String content,
     String? title,
     String? color,
@@ -65,14 +67,20 @@ final class NotesNotifier extends Notifier<AsyncValue<List<Note>>> {
         color: color,
         pinned: pinned,
       );
-      final notes = [...state.value ?? const <Note>[], created];
+      final notes = sortNotesPinnedFirst([
+        ...state.value ?? const <Note>[],
+        created,
+      ]);
       state = AsyncData(notes);
+      return true;
     } catch (e) {
       ref.read(notesActionErrorProvider.notifier).report(e);
+      return false;
     }
   }
 
-  Future<void> update(
+  /// Aggiorna la nota; ritorna false se il salvataggio fallisce.
+  Future<bool> update(
     int id, {
     String? content,
     String? title,
@@ -90,9 +98,13 @@ final class NotesNotifier extends Notifier<AsyncValue<List<Note>>> {
         pinned: pinned,
       );
       final prev = state.value ?? const <Note>[];
-      state = AsyncData(prev.map((n) => n.id == id ? updated : n).toList());
+      state = AsyncData(
+        sortNotesPinnedFirst(prev.map((n) => n.id == id ? updated : n)),
+      );
+      return true;
     } catch (e) {
       ref.read(notesActionErrorProvider.notifier).report(e);
+      return false;
     }
   }
 

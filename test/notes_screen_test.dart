@@ -74,6 +74,17 @@ final class FakeNoteRepository extends NoteRepository {
   Future<void> deleteNote(int id) async => notes.removeWhere((n) => n.id == id);
 }
 
+/// Il server non raggiungibile: il salvataggio fallisce.
+final class FailingNoteRepository extends FakeNoteRepository {
+  @override
+  Future<Note> createNote({
+    required String content,
+    String? title,
+    String? color,
+    bool pinned = false,
+  }) => Future.error(Exception('offline'));
+}
+
 Widget _pump(Widget child, FakeNoteRepository repo) {
   return ProviderScope(
     overrides: [
@@ -124,5 +135,52 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repo.notes, hasLength(1));
+  });
+
+  testWidgets('Pinning a note moves it to the top', (tester) async {
+    final repo = FakeNoteRepository();
+    await tester.pumpWidget(_pump(const NotesScreen(), repo));
+    await tester.pumpAndSettle();
+
+    // Prima tile = 'Spesa', seconda = 'solo contenuto'. Il bottone pin è il
+    // primo IconButton del trailing della seconda tile.
+    final secondTile = find.byType(ListTile).at(1);
+    final pinButton = find
+        .descendant(of: secondTile, matching: find.byType(IconButton))
+        .first;
+    await tester.tap(pinButton);
+    await tester.pumpAndSettle();
+
+    final tiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
+    expect((tiles.first.title as Text).data, 'solo contenuto');
+  });
+
+  testWidgets('A failed save keeps the editor open with the draft', (
+    tester,
+  ) async {
+    final repo = FailingNoteRepository();
+    await tester.pumpWidget(_pump(const NotesScreen(), repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).at(1), 'bozza importante');
+    await tester.tap(find.text('Salva'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nuova nota'), findsOneWidget);
+    expect(find.text('bozza importante'), findsWidgets);
+    expect(find.textContaining('Operazione non riuscita'), findsOneWidget);
+  });
+
+  test('sortNotesPinnedFirst keeps the relative order', () {
+    final notes = [
+      const Note(id: 1, content: 'a'),
+      const Note(id: 2, content: 'b', pinned: true),
+      const Note(id: 3, content: 'c'),
+      const Note(id: 4, content: 'd', pinned: true),
+    ];
+
+    expect(sortNotesPinnedFirst(notes).map((n) => n.id).toList(), [2, 4, 1, 3]);
   });
 }

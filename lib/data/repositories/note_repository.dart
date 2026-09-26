@@ -24,11 +24,7 @@ base class NoteRepository {
       final list = raw
           .map((e) => Note.fromJson(e as Map<String, dynamic>))
           .toList();
-      list.sort((a, b) {
-        if (a.pinned == b.pinned) return 0;
-        return a.pinned ? -1 : 1; // pinned prima
-      });
-      return list;
+      return sortNotesPinnedFirst(list);
     });
   }
 

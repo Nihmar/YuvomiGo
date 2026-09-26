@@ -248,16 +248,21 @@ final class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
     setState(() => _busy = true);
     final notifier = ref.read(notesProvider.notifier);
     final note = widget.note;
-    if (note == null) {
-      await notifier.add(content: content, title: title, pinned: _pinned);
-    } else {
-      await notifier.update(
-        note.id,
-        content: content,
-        title: title,
-        pinned: _pinned,
-      );
+    final success = note == null
+        ? await notifier.add(content: content, title: title, pinned: _pinned)
+        : await notifier.update(
+            note.id,
+            content: content,
+            title: title,
+            pinned: _pinned,
+          );
+    if (!mounted) return;
+    if (!success) {
+      // Salvataggio fallito: il dialog resta aperto con il testo digitato,
+      // l'errore è mostrato dallo SnackBar della schermata Note.
+      setState(() => _busy = false);
+      return;
     }
-    if (mounted) navigator.pop();
+    navigator.pop();
   }
 }

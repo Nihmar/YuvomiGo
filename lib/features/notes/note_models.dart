@@ -59,3 +59,14 @@ final class Note {
     );
   }
 }
+
+/// Riordina le note con le pinnate prima, mantenendo l'ordine relativo
+/// all'interno dei due gruppi (il sort di Dart non è stabile).
+List<Note> sortNotesPinnedFirst(Iterable<Note> notes) {
+  final pinned = <Note>[];
+  final rest = <Note>[];
+  for (final note in notes) {
+    (note.pinned ? pinned : rest).add(note);
+  }
+  return [...pinned, ...rest];
+}
