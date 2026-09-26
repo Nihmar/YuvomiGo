@@ -113,6 +113,38 @@ void main() {
     );
   });
 
+  testWidgets('Password visibility can be toggled', (tester) async {
+    await _pump(tester, FakeAuthController(const AuthUnauthenticated()));
+
+    EditableText passwordField() =>
+        tester.widget<EditableText>(find.byType(EditableText).at(2));
+    expect(passwordField().obscureText, isTrue);
+
+    await tester.tap(find.byIcon(Icons.visibility_off));
+    await tester.pump();
+
+    expect(passwordField().obscureText, isFalse);
+    expect(find.byIcon(Icons.visibility), findsOneWidget);
+  });
+
+  testWidgets('Pending 2FA offers a way back to the credentials form', (
+    tester,
+  ) async {
+    final controller = FakeAuthController(
+      const AuthPending2FA(recoveryAvailable: false),
+    );
+    await _pump(tester, controller);
+
+    expect(find.text('Codice'), findsOneWidget);
+
+    await tester.tap(find.text('Usa un altro account'));
+    await tester.pumpAndSettle();
+
+    expect(controller.cancelTwoFactorCalled, isTrue);
+    expect(find.text('Username'), findsOneWidget);
+    expect(find.text('Codice'), findsNothing);
+  });
+
   group('ServerUrlMemory', () {
     test('remember persists and read returns it', () async {
       final storage = InMemoryStorage();

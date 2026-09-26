@@ -19,6 +19,7 @@ class FakeAuthController extends AuthController {
 
   bool loginCalled = false;
   bool verifyCalled = false;
+  bool cancelTwoFactorCalled = false;
   String? lastServerUrl;
   String? lastUsername;
   String? lastPassword;
@@ -43,5 +44,11 @@ class FakeAuthController extends AuthController {
   Future<void> verifyTwoFactor(String code) async {
     verifyCalled = true;
     state = Authenticated(user: fakeUser());
+  }
+
+  @override
+  Future<void> cancelTwoFactor() async {
+    cancelTwoFactorCalled = true;
+    state = const AuthUnauthenticated();
   }
 }

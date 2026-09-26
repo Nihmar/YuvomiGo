@@ -129,6 +129,18 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
+  /// Annulla il 2FA in corso: si torna al form con username/password.
+  Future<void> cancelTwoFactor() async {
+    final sessions = ref.read(sessionManagerProvider);
+    _api = null;
+    state = const AuthUnauthenticated();
+    try {
+      await sessions.clear();
+    } catch (_) {
+      // Storage non disponibile: lo stato in memoria è già pulito.
+    }
+  }
+
   /// Logout: azzera lo stato locale (sempre) e revoca la sessione lato
   /// server (best-effort).
   Future<void> logout() async {

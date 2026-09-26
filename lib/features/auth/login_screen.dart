@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:yuvomigo/core/api/api_error.dart';
+import 'package:yuvomigo/core/utils/url_utils.dart';
 import 'package:yuvomigo/features/auth/auth_controller.dart';
 import 'package:yuvomigo/features/auth/auth_state.dart';
 import 'package:yuvomigo/features/auth/server_settings.dart';
-import 'package:yuvomigo/core/utils/url_utils.dart';
 
 /// Schermata di login: URL server + username + password (e 2FA opzionale).
 final class LoginScreen extends ConsumerStatefulWidget {
@@ -23,6 +23,7 @@ final class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   String? _error;
   bool _submitting = false;
+  bool _obscurePassword = true;
 
   @override
   void initState() {
@@ -123,6 +124,12 @@ final class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  /// Torna al form con username/password (annulla il 2FA in corso).
+  Future<void> _cancelTwoFactor() async {
+    setState(() => _error = null);
+    await ref.read(authControllerProvider.notifier).cancelTwoFactor();
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(authControllerProvider);
@@ -137,104 +144,133 @@ final class _LoginScreenState extends ConsumerState<LoginScreen> {
             padding: const EdgeInsets.all(24),
             child: Form(
               key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 16),
-                  Text(
-                    'Accedi al tuo server Yuvomi',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 24),
-                  if (_error != null)
-                    _errorBox(context, _error!)
-                  else
-                    const SizedBox.shrink(),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _urlController,
-                    decoration: const InputDecoration(
-                      labelText: 'URL server',
-                      hintText: 'http://domini-o-nas:4000',
-                      prefixIcon: Icon(Icons.link),
+              child: AutofillGroup(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 16),
+                    Text(
+                      'Accedi al tuo server Yuvomi',
+                      style: Theme.of(context).textTheme.headlineSmall,
                     ),
-                    validator: validateServerUrl,
-                    textInputAction: TextInputAction.next,
-                  ),
-                  const SizedBox(height: 16),
-                  if (!pending2FA) ...[
+                    const SizedBox(height: 24),
+                    if (_error != null)
+                      _errorBox(context, _error!)
+                    else
+                      const SizedBox.shrink(),
+                    const SizedBox(height: 8),
                     TextFormField(
-                      controller: _usernameController,
+                      controller: _urlController,
                       decoration: const InputDecoration(
-                        labelText: 'Username',
-                        prefixIcon: Icon(Icons.person),
+                        labelText: 'URL server',
+                        hintText: 'http://domini-o-nas:4000',
+                        prefixIcon: Icon(Icons.link),
                       ),
-                      validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'Inserisci l\'username.'
-                          : null,
+                      validator: validateServerUrl,
+                      keyboardType: TextInputType.url,
+                      autofillHints: const [AutofillHints.url],
                       textInputAction: TextInputAction.next,
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Password',
-                        prefixIcon: Icon(Icons.lock),
+                    if (!pending2FA) ...[
+                      TextFormField(
+                        controller: _usernameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Username',
+                          prefixIcon: Icon(Icons.person),
+                        ),
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Inserisci l\'username.'
+                            : null,
+                        autofillHints: const [AutofillHints.username],
+                        textInputAction: TextInputAction.next,
                       ),
-                      validator: (v) => (v == null || v.isEmpty)
-                          ? 'Inserisci la password.'
-                          : null,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) {
-                        if (!_submitting) _submitCredentials();
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    FilledButton.icon(
-                      onPressed: _submitting ? null : _submitCredentials,
-                      icon: _submitting
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.login),
-                      label: const Text('Accedi'),
-                    ),
-                  ] else ...[
-                    Text(
-                      'Inserisci il codice del secondo fattore'
-                      '${state.recoveryAvailable ? ' (o un recovery code)' : ''}.',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _codeController,
-                      decoration: const InputDecoration(
-                        labelText: 'Codice',
-                        prefixIcon: Icon(Icons.pin),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          prefixIcon: const Icon(Icons.lock),
+                          suffixIcon: IconButton(
+                            tooltip: _obscurePassword
+                                ? 'Mostra password'
+                                : 'Nascondi password',
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
+                            onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
+                          ),
+                        ),
+                        validator: (v) => (v == null || v.isEmpty)
+                            ? 'Inserisci la password.'
+                            : null,
+                        autofillHints: const [AutofillHints.password],
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) {
+                          if (!_submitting) _submitCredentials();
+                        },
                       ),
-                      keyboardType: TextInputType.number,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) {
-                        if (!_submitting) _submit2FA();
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    FilledButton.icon(
-                      onPressed: _submitting ? null : _submit2FA,
-                      icon: _submitting
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.verified),
-                      label: const Text('Verifica'),
-                    ),
+                      const SizedBox(height: 24),
+                      FilledButton.icon(
+                        onPressed: _submitting ? null : _submitCredentials,
+                        icon: _submitting
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.login),
+                        label: const Text('Accedi'),
+                      ),
+                    ] else ...[
+                      Text(
+                        'Inserisci il codice del secondo fattore'
+                        '${state.recoveryAvailable ? ' (o un recovery code)' : ''}.',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _codeController,
+                        decoration: const InputDecoration(
+                          labelText: 'Codice',
+                          prefixIcon: Icon(Icons.pin),
+                        ),
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) {
+                          if (!_submitting) _submit2FA();
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      FilledButton.icon(
+                        onPressed: _submitting ? null : _submit2FA,
+                        icon: _submitting
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.verified),
+                        label: const Text('Verifica'),
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton.icon(
+                        onPressed: _submitting ? null : _cancelTwoFactor,
+                        icon: const Icon(Icons.arrow_back),
+                        label: const Text('Usa un altro account'),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),
