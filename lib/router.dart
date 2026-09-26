@@ -8,6 +8,7 @@ import 'package:yuvomigo/features/birthdays/birthdays_screen.dart';
 import 'package:yuvomigo/features/budget/budget_screen.dart';
 import 'package:yuvomigo/features/calendar/calendar_screen.dart';
 import 'package:yuvomigo/features/dashboard/dashboard_screen.dart';
+import 'package:yuvomigo/features/documents/documents_screen.dart';
 import 'package:yuvomigo/features/home/home_screen.dart';
 import 'package:yuvomigo/features/inventory/inventory_screen.dart';
 import 'package:yuvomigo/features/meals/meals_screen.dart';
@@ -19,6 +20,7 @@ import 'package:yuvomigo/features/shopping/shopping_list_detail_screen.dart';
 import 'package:yuvomigo/features/shopping/shopping_screen.dart';
 import 'package:yuvomigo/features/settings/settings_screen.dart';
 import 'package:yuvomigo/features/tasks/tasks_screen.dart';
+import 'package:yuvomigo/features/waste/waste_screen.dart';
 
 final class _SplashScreen extends StatelessWidget {
   const _SplashScreen();
@@ -128,6 +130,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/pantry',
         name: 'pantry',
         builder: (context, state) => const PantryScreen(),
+      ),
+      GoRoute(
+        path: '/waste',
+        name: 'waste',
+        builder: (context, state) => const WasteScreen(),
+      ),
+      GoRoute(
+        path: '/documents',
+        name: 'documents',
+        builder: (context, state) => const DocumentsScreen(),
       ),
       GoRoute(
         path: '/settings',

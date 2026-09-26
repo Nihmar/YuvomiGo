@@ -224,6 +224,8 @@ void main() {
     expect(find.text('Ricette'), findsOneWidget);
     expect(find.text('Inventario'), findsOneWidget);
     expect(find.text('Dispensa'), findsOneWidget);
+    expect(find.text('Rifiuti'), findsOneWidget);
+    expect(find.text('Documenti'), findsOneWidget);
   });
 
   testWidgets('A module from the sheet opens its screen', (tester) async {
