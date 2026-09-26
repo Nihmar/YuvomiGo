@@ -16,9 +16,7 @@ String normalizeServerUrl(String input) {
   }
   final uri = Uri.parse(url);
   if (uri.scheme != 'http' && uri.scheme != 'https') {
-    throw const FormatException(
-      'Lo schema deve essere http:// o https://.',
-    );
+    throw const FormatException('Lo schema deve essere http:// o https://.');
   }
   if (uri.host.isEmpty) {
     throw const FormatException('URL non valido: manca l\'host.');

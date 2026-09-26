@@ -14,12 +14,12 @@ final class NoteCategory {
   final int sortOrder;
 
   factory NoteCategory.fromJson(Map<String, dynamic> json) => NoteCategory(
-        id: (json['id'] as num).toInt(),
-        name: json['name'] as String,
-        scope: json['scope'] as String,
-        ownerUserId: (json['owner_user_id'] as num?)?.toInt(),
-        sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
-      );
+    id: (json['id'] as num).toInt(),
+    name: json['name'] as String,
+    scope: json['scope'] as String,
+    ownerUserId: (json['owner_user_id'] as num?)?.toInt(),
+    sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
+  );
 }
 
 final class Note {

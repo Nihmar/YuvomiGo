@@ -13,8 +13,8 @@ final noteRepositoryProvider = Provider<NoteRepository>((ref) {
 /// lo screen lo mostra come SnackBar. Null = nessuna azione fallita di recente.
 final notesActionErrorProvider =
     NotifierProvider<NotesActionErrorNotifier, Object?>(
-  NotesActionErrorNotifier.new,
-);
+      NotesActionErrorNotifier.new,
+    );
 
 final class NotesActionErrorNotifier extends Notifier<Object?> {
   @override
@@ -26,8 +26,8 @@ final class NotesActionErrorNotifier extends Notifier<Object?> {
 
 final notesProvider =
     NotifierProvider.autoDispose<NotesNotifier, AsyncValue<List<Note>>>(
-  NotesNotifier.new,
-);
+      NotesNotifier.new,
+    );
 
 final class NotesNotifier extends Notifier<AsyncValue<List<Note>>> {
   bool _loading = false;

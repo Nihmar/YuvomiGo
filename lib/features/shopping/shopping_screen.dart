@@ -50,13 +50,18 @@ final class _ShoppingScreenState extends ConsumerState<ShoppingScreen> {
               final list = lists[index];
               return ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                  child: Icon(Icons.shopping_cart,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer),
+                  backgroundColor: Theme.of(context)
+                      .colorScheme
+                      .primaryContainer,
+                  child: Icon(
+                    Icons.shopping_cart,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
                 ),
                 title: Text(list.name),
                 subtitle: Text(
-                    '${list.openCount} aperti · ${list.itemChecked}/${list.itemTotal} spuntati'),
+                  '${list.openCount} aperti · ${list.itemChecked}/${list.itemTotal} spuntati',
+                ),
                 trailing: PopupMenuButton<String>(
                   tooltip: 'Azioni lista',
                   onSelected: (value) {
@@ -215,10 +220,13 @@ final class _ErrorTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Impossibile caricare le liste.',
-                    style: TextStyle(
-                        color: scheme.onErrorContainer,
-                        fontWeight: FontWeight.bold)),
+                Text(
+                  'Impossibile caricare le liste.',
+                  style: TextStyle(
+                    color: scheme.onErrorContainer,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Text(detail, style: TextStyle(color: scheme.onErrorContainer)),
                 const SizedBox(height: 12),

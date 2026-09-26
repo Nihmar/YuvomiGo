@@ -17,10 +17,12 @@ import 'utils/in_memory_storage.dart';
 /// Repository Spesa in memoria: sostituisce il network per i widget test.
 final class FakeShoppingRepository extends ShoppingRepository {
   FakeShoppingRepository()
-      : super(YuvomiApi(
+    : super(
+        YuvomiApi(
           baseUrl: 'http://fake.local',
           sessions: SessionManager(InMemoryStorage()),
-        ));
+        ),
+      );
 
   final List<ShoppingList> lists = [
     ShoppingList(id: 1, name: 'Super', itemTotal: 5, itemChecked: 2),
@@ -60,8 +62,12 @@ final class FakeShoppingRepository extends ShoppingRepository {
       (itemsByList[listId] ?? const <ShoppingItem>[]).toList();
 
   @override
-  Future<ShoppingItem> addItem(int listId,
-      {required String name, String? quantity, String? category}) {
+  Future<ShoppingItem> addItem(
+    int listId, {
+    required String name,
+    String? quantity,
+    String? category,
+  }) {
     final item = ShoppingItem(id: _nextId++, name: name, quantity: quantity);
     itemsByList.putIfAbsent(listId, () => []).add(item);
     return Future.value(item);
@@ -73,12 +79,17 @@ final class FakeShoppingRepository extends ShoppingRepository {
       final idx = items.indexWhere((i) => i.id == itemId);
       if (idx >= 0) {
         items[idx] = ShoppingItem(
-            id: itemId, name: items[idx].name, quantity: items[idx].quantity,
-            isChecked: isChecked);
+          id: itemId,
+          name: items[idx].name,
+          quantity: items[idx].quantity,
+          isChecked: isChecked,
+        );
         return Future.value(items[idx]);
       }
     }
-    return Future.value(ShoppingItem(id: itemId, name: '?', isChecked: isChecked));
+    return Future.value(
+      ShoppingItem(id: itemId, name: '?', isChecked: isChecked),
+    );
   }
 
   @override
@@ -104,9 +115,7 @@ Widget _pump(Widget child, FakeShoppingRepository repo) {
       ),
       shoppingRepositoryProvider.overrideWithValue(repo),
     ],
-    child: MaterialApp(
-      home: child,
-    ),
+    child: MaterialApp(home: child),
   );
 }
 
@@ -140,8 +149,9 @@ void main() {
 
   testWidgets('Detail screen renders items with checkboxes', (tester) async {
     final repo = FakeShoppingRepository();
-    await tester.pumpWidget(_pump(
-        const ShoppingListDetailScreen(listId: 1), repo));
+    await tester.pumpWidget(
+      _pump(const ShoppingListDetailScreen(listId: 1), repo),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Latte (2)'), findsOneWidget);
@@ -151,8 +161,9 @@ void main() {
 
   testWidgets('Toggling an item updates its checked state', (tester) async {
     final repo = FakeShoppingRepository();
-    await tester.pumpWidget(_pump(
-        const ShoppingListDetailScreen(listId: 1), repo));
+    await tester.pumpWidget(
+      _pump(const ShoppingListDetailScreen(listId: 1), repo),
+    );
     await tester.pumpAndSettle();
 
     // Spunta "Latte" (id 10, inizialmente non spuntato).
@@ -167,8 +178,9 @@ void main() {
 
   testWidgets('Adding an item appends it', (tester) async {
     final repo = FakeShoppingRepository();
-    await tester.pumpWidget(_pump(
-        const ShoppingListDetailScreen(listId: 1), repo));
+    await tester.pumpWidget(
+      _pump(const ShoppingListDetailScreen(listId: 1), repo),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.add));
@@ -180,17 +192,16 @@ void main() {
     // "Uova" compare nella lista (e, prima della chiusura, nel dialog).
     expect(find.text('Uova'), findsWidgets);
     // Verifica sul repository: esattamente un articolo "Uova" nella lista 1.
-    expect(
-      repo.itemsByList[1]!.where((i) => i.name == 'Uova'),
-      hasLength(1),
-    );
+    expect(repo.itemsByList[1]!.where((i) => i.name == 'Uova'), hasLength(1));
   });
 
-  testWidgets('Adding an item with quantity sends it to the server',
-      (tester) async {
+  testWidgets('Adding an item with quantity sends it to the server', (
+    tester,
+  ) async {
     final repo = FakeShoppingRepository();
-    await tester.pumpWidget(_pump(
-        const ShoppingListDetailScreen(listId: 1), repo));
+    await tester.pumpWidget(
+      _pump(const ShoppingListDetailScreen(listId: 1), repo),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.add));
@@ -201,16 +212,17 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Uova (6)'), findsOneWidget);
-    final created =
-        repo.itemsByList[1]!.firstWhere((i) => i.name == 'Uova');
+    final created = repo.itemsByList[1]!.firstWhere((i) => i.name == 'Uova');
     expect(created.quantity, '6');
   });
 
-  testWidgets('Failed toggle keeps the item and shows an error',
-      (tester) async {
+  testWidgets('Failed toggle keeps the item and shows an error', (
+    tester,
+  ) async {
     final repo = FailingShoppingRepository();
-    await tester.pumpWidget(_pump(
-        const ShoppingListDetailScreen(listId: 1), repo));
+    await tester.pumpWidget(
+      _pump(const ShoppingListDetailScreen(listId: 1), repo),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byType(Checkbox).first);

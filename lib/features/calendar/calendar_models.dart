@@ -20,8 +20,8 @@ final class CalendarEvent {
     final allDay = allDayRaw is bool
         ? allDayRaw
         : allDayRaw is num
-            ? allDayRaw == 1
-            : false;
+        ? allDayRaw == 1
+        : false;
     return CalendarEvent(
       id: (json['id'] as num).toInt(),
       title: json['title'] as String? ?? '',

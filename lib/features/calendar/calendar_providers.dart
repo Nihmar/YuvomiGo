@@ -10,8 +10,10 @@ final calendarRepositoryProvider = Provider<CalendarRepository>((ref) {
 });
 
 final calendarEventsProvider =
-    NotifierProvider.autoDispose<CalendarEventsNotifier,
-        AsyncValue<List<CalendarEvent>>>(CalendarEventsNotifier.new);
+    NotifierProvider.autoDispose<
+      CalendarEventsNotifier,
+      AsyncValue<List<CalendarEvent>>
+    >(CalendarEventsNotifier.new);
 
 final class CalendarEventsNotifier
     extends Notifier<AsyncValue<List<CalendarEvent>>> {

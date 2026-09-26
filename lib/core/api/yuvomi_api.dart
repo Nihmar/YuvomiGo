@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../auth/session_manager.dart';
 import 'api_error.dart';
 import 'auth_interceptor.dart';
+
 import 'package:yuvomigo/data/generated/api_client.dart' as gen;
 import 'package:yuvomigo/data/generated/models/user.dart';
 
@@ -29,10 +30,7 @@ final class LoginTwoFactorRequired extends LoginResult {
 /// Wrapper sopra il client generato: crea il Dio con l'interceptor di
 /// sessione e espone login / 2FA / me / logout.
 final class YuvomiApi {
-  YuvomiApi({
-    required String baseUrl,
-    required SessionManager sessions,
-  }) {
+  YuvomiApi({required String baseUrl, required SessionManager sessions}) {
     _sessions = sessions;
     _dio = Dio(
       BaseOptions(

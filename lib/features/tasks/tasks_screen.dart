@@ -33,13 +33,18 @@ final class TasksScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Impossibile caricare le task.',
-                        style: TextStyle(
-                            color: scheme.onErrorContainer,
-                            fontWeight: FontWeight.bold)),
+                    Text(
+                      'Impossibile caricare le task.',
+                      style: TextStyle(
+                        color: scheme.onErrorContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    Text(e.toString(),
-                        style: TextStyle(color: scheme.onErrorContainer)),
+                    Text(
+                      e.toString(),
+                      style: TextStyle(color: scheme.onErrorContainer),
+                    ),
                   ],
                 ),
               ),
@@ -51,9 +56,11 @@ final class TasksScreen extends ConsumerWidget {
             return ListView(
               padding: const EdgeInsets.all(24),
               children: [
-                Text('Nessuna task aperta.\nUsa "Aggiungi" per crearne una.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium),
+                Text(
+                  'Nessuna task aperta.\nUsa "Aggiungi" per crearne una.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
               ],
             );
           }
@@ -65,9 +72,8 @@ final class TasksScreen extends ConsumerWidget {
               return ListTile(
                 leading: Checkbox(
                   value: isDone,
-                  onChanged: (v) => ref
-                      .read(tasksProvider.notifier)
-                      .toggle(task.id),
+                  onChanged: (v) =>
+                      ref.read(tasksProvider.notifier).toggle(task.id),
                 ),
                 title: Text(
                   task.title,

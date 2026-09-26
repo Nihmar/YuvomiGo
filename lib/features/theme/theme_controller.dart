@@ -40,9 +40,9 @@ class ThemeController extends Notifier<int> {
   /// Ricarica la scelta persistita (se valida), altrimenti resta il default.
   Future<void> _load() async {
     try {
-      final raw = await ref.read(secureStorageProvider).read(
-            themeSeedStorageKey,
-          );
+      final raw = await ref
+          .read(secureStorageProvider)
+          .read(themeSeedStorageKey);
       final seed = raw == null ? null : int.tryParse(raw);
       if (seed != null && themeChoices.any((c) => c.seed == seed)) {
         state = seed;
@@ -56,14 +56,13 @@ class ThemeController extends Notifier<int> {
   Future<void> select(int seed) async {
     state = seed;
     try {
-      await ref
-          .read(secureStorageProvider)
-          .write(themeSeedStorageKey, '$seed');
+      await ref.read(secureStorageProvider).write(themeSeedStorageKey, '$seed');
     } catch (_) {
       // La selezione in memoria resta attiva anche senza persistenza.
     }
   }
 }
 
-final themeControllerProvider =
-    NotifierProvider<ThemeController, int>(ThemeController.new);
+final themeControllerProvider = NotifierProvider<ThemeController, int>(
+  ThemeController.new,
+);

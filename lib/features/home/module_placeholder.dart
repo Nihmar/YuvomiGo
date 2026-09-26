@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 
 /// Placeholder per i moduli MVP: viene implementato in M2.
 final class ModulePlaceholder extends StatelessWidget {
-  const ModulePlaceholder({super.key, required this.title, required this.icon, this.detail});
+  const ModulePlaceholder({
+    super.key,
+    required this.title,
+    required this.icon,
+    this.detail,
+  });
 
   final String title;
   final IconData icon;

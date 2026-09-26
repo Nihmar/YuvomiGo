@@ -17,25 +17,25 @@ import 'utils/in_memory_storage.dart';
 
 final class _FakeCalendarRepository extends CalendarRepository {
   _FakeCalendarRepository()
-      : super(YuvomiApi(
+    : super(
+        YuvomiApi(
           baseUrl: 'http://fake.local',
           sessions: SessionManager(InMemoryStorage()),
-        ));
+        ),
+      );
 
   @override
   Future<List<CalendarEvent>> fetchRange(String from, String to) async => [
-        CalendarEvent(
-          id: 1,
-          title: 'Evento nav',
-          startDatetime: '2026-09-01T09:00:00',
-        ),
-      ];
+    CalendarEvent(
+      id: 1,
+      title: 'Evento nav',
+      startDatetime: '2026-09-01T09:00:00',
+    ),
+  ];
 }
 
 final _sample = DashboardData(
-  urgentTasks: [
-    DashTask(id: 10, title: 'Paga bolletta', priority: 'urgent'),
-  ],
+  urgentTasks: [DashTask(id: 10, title: 'Paga bolletta', priority: 'urgent')],
   openTaskCount: 7,
 );
 
@@ -54,8 +54,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final navBar =
-        tester.widget<NavigationBar>(find.byType(NavigationBar));
+    final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
     expect(navBar.destinations, hasLength(5));
     final labels = navBar.destinations
         .map((d) => (d as NavigationDestination).label)

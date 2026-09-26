@@ -33,13 +33,18 @@ final class NotesScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Impossibile caricare le note.',
-                        style: TextStyle(
-                            color: scheme.onErrorContainer,
-                            fontWeight: FontWeight.bold)),
+                    Text(
+                      'Impossibile caricare le note.',
+                      style: TextStyle(
+                        color: scheme.onErrorContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    Text(e.toString(),
-                        style: TextStyle(color: scheme.onErrorContainer)),
+                    Text(
+                      e.toString(),
+                      style: TextStyle(color: scheme.onErrorContainer),
+                    ),
                   ],
                 ),
               ),
@@ -51,9 +56,11 @@ final class NotesScreen extends ConsumerWidget {
             return ListView(
               padding: const EdgeInsets.all(24),
               children: [
-                Text('Nessuna nota.\nUsa "Aggiungi" per crearne una.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium),
+                Text(
+                  'Nessuna nota.\nUsa "Aggiungi" per crearne una.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
               ],
             );
           }
@@ -86,9 +93,7 @@ final class NotesScreen extends ConsumerWidget {
                   children: [
                     IconButton(
                       icon: Icon(
-                        note.pinned
-                            ? Icons.push_pin
-                            : Icons.push_pin_outlined,
+                        note.pinned ? Icons.push_pin : Icons.push_pin_outlined,
                       ),
                       onPressed: () => ref
                           .read(notesProvider.notifier)
@@ -200,7 +205,10 @@ final class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
           const SizedBox(height: 12),
           Row(
             children: [
-              Checkbox(value: _pinned, onChanged: (v) => setState(() => _pinned = v ?? false)),
+              Checkbox(
+                value: _pinned,
+                onChanged: (v) => setState(() => _pinned = v ?? false),
+              ),
               const Text('Fissa in alto'),
             ],
           ),

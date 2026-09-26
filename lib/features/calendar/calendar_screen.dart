@@ -26,13 +26,18 @@ final class CalendarScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Impossibile caricare il calendario.',
-                        style: TextStyle(
-                            color: scheme.onErrorContainer,
-                            fontWeight: FontWeight.bold)),
+                    Text(
+                      'Impossibile caricare il calendario.',
+                      style: TextStyle(
+                        color: scheme.onErrorContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    Text(e.toString(),
-                        style: TextStyle(color: scheme.onErrorContainer)),
+                    Text(
+                      e.toString(),
+                      style: TextStyle(color: scheme.onErrorContainer),
+                    ),
                   ],
                 ),
               ),
@@ -44,9 +49,11 @@ final class CalendarScreen extends ConsumerWidget {
             return ListView(
               padding: const EdgeInsets.all(24),
               children: [
-                Text('Nessun evento nei prossimi 7 giorni.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium),
+                Text(
+                  'Nessun evento nei prossimi 7 giorni.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
               ],
             );
           }
@@ -59,8 +66,8 @@ final class CalendarScreen extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Text(
                     entry.key,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.bold),
                   ),
                 ),
                 for (final event in entry.value)
@@ -68,9 +75,7 @@ final class CalendarScreen extends ConsumerWidget {
                     leading: const Icon(Icons.event),
                     title: Text(event.title),
                     subtitle: Text(
-                      event.allDay
-                          ? ''
-                          : _timeOf(event.startDatetime),
+                      event.allDay ? '' : _timeOf(event.startDatetime),
                     ),
                   ),
               ],

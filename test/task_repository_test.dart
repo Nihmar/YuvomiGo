@@ -28,13 +28,21 @@ final class _RoutingAdapter implements HttpClientAdapter {
     for (final r in routes) {
       if (r['method'] == options.method && r['path'] == options.path) {
         return ResponseBody.fromString(
-            jsonEncode(r['body']),
-            200,
-            headers: const {'content-type': ['application/json']});
+          jsonEncode(r['body']),
+          200,
+          headers: const {
+            'content-type': ['application/json'],
+          },
+        );
       }
     }
-    return ResponseBody.fromString(jsonEncode({'data': <Object>[]}), 200,
-        headers: const {'content-type': ['application/json']});
+    return ResponseBody.fromString(
+      jsonEncode({'data': <Object>[]}),
+      200,
+      headers: const {
+        'content-type': ['application/json'],
+      },
+    );
   }
 
   @override
@@ -44,8 +52,9 @@ final class _RoutingAdapter implements HttpClientAdapter {
 void main() {
   YuvomiApi apiWith(_RoutingAdapter adapter) {
     final api = YuvomiApi(
-        baseUrl: 'http://test.local',
-        sessions: SessionManager(InMemoryStorage()));
+      baseUrl: 'http://test.local',
+      sessions: SessionManager(InMemoryStorage()),
+    );
     api.dio.httpClientAdapter = adapter;
     return api;
   }
@@ -78,20 +87,25 @@ void main() {
 
   test('createTask posts the payload', () async {
     final adapter = _RoutingAdapter();
-    adapter.addRoute('POST', '/api/v1/tasks',
-        {'data': {'id': 7, 'title': 'compra', 'status': 'open'}});
+    adapter.addRoute('POST', '/api/v1/tasks', {
+      'data': {'id': 7, 'title': 'compra', 'status': 'open'},
+    });
     final repo = TaskRepository(apiWith(adapter));
     final created = await repo.createTask(title: 'compra');
 
     expect(created.id, 7);
     // Solo i campi valorizzati: niente null espliciti.
-    expect(adapter.requests.first.data, {'title': 'compra', 'priority': 'none'});
+    expect(adapter.requests.first.data, {
+      'title': 'compra',
+      'priority': 'none',
+    });
   });
 
   test('setStatus PATCHes the status wire value', () async {
     final adapter = _RoutingAdapter();
-    adapter.addRoute('PATCH', '/api/v1/tasks/7/status',
-        {'data': {'id': 7, 'title': 'compra', 'status': 'done'}});
+    adapter.addRoute('PATCH', '/api/v1/tasks/7/status', {
+      'data': {'id': 7, 'title': 'compra', 'status': 'done'},
+    });
     final repo = TaskRepository(apiWith(adapter));
     final updated = await repo.setStatus(7, TaskStatus.done);
 

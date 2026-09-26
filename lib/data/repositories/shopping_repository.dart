@@ -27,7 +27,9 @@ base class ShoppingRepository {
   }
 
   Future<List<ShoppingList>> fetchLists() async {
-    final response = await _api.dio.get<Map<String, dynamic>>('/api/v1/shopping');
+    final response = await _api.dio.get<Map<String, dynamic>>(
+      '/api/v1/shopping',
+    );
     return _dataList(response.data).map(ShoppingList.fromJson).toList();
   }
 

@@ -92,10 +92,7 @@ void main() {
   testWidgets('Pending 2FA keeps the verify button enabled', (tester) async {
     await _pumpLogin(
       tester,
-      TimingFakeAuthController(
-        const AuthUnauthenticated(),
-        twoFactor: true,
-      ),
+      TimingFakeAuthController(const AuthUnauthenticated(), twoFactor: true),
     );
     await _fillAndSubmit(tester);
 

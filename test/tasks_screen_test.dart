@@ -15,10 +15,12 @@ import 'utils/in_memory_storage.dart';
 
 final class FakeTaskRepository extends TaskRepository {
   FakeTaskRepository()
-      : super(YuvomiApi(
+    : super(
+        YuvomiApi(
           baseUrl: 'http://fake.local',
           sessions: SessionManager(InMemoryStorage()),
-        ));
+        ),
+      );
 
   final List<Task> tasks = [
     Task(id: 1, title: 'Spesa', dueDate: '2026-09-01'),
@@ -31,16 +33,18 @@ final class FakeTaskRepository extends TaskRepository {
       tasks.toList();
 
   @override
-  Future<Task> createTask(
-      {required String title,
-      String? dueDate,
-      String priority = 'none',
-      String? category}) {
+  Future<Task> createTask({
+    required String title,
+    String? dueDate,
+    String priority = 'none',
+    String? category,
+  }) {
     final t = Task(
-        id: _nextId++,
-        title: title,
-        dueDate: dueDate,
-        priority: priority);
+      id: _nextId++,
+      title: title,
+      dueDate: dueDate,
+      priority: priority,
+    );
     tasks.add(t);
     return Future.value(t);
   }
@@ -94,8 +98,9 @@ void main() {
     expect(find.byType(Checkbox), findsNWidgets(2));
   });
 
-  testWidgets('Toggling a task to done removes it from the open list',
-      (tester) async {
+  testWidgets('Toggling a task to done removes it from the open list', (
+    tester,
+  ) async {
     final repo = FakeTaskRepository();
     await tester.pumpWidget(_pump(const TasksScreen(), repo));
     await tester.pumpAndSettle();
@@ -109,8 +114,9 @@ void main() {
     expect(find.text('Pagare bolletta'), findsOneWidget);
   });
 
-  testWidgets('Failed toggle keeps the task and shows an error',
-      (tester) async {
+  testWidgets('Failed toggle keeps the task and shows an error', (
+    tester,
+  ) async {
     final repo = FailingTaskRepository();
     await tester.pumpWidget(_pump(const TasksScreen(), repo));
     await tester.pumpAndSettle();

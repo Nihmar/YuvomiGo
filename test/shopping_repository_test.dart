@@ -26,8 +26,13 @@ final class _RoutingAdapter implements HttpClientAdapter {
   ) async {
     requests.add(options);
     final body = _resolve(options);
-    return ResponseBody.fromString(jsonEncode(body), 200,
-        headers: const {'content-type': ['application/json']});
+    return ResponseBody.fromString(
+      jsonEncode(body),
+      200,
+      headers: const {
+        'content-type': ['application/json'],
+      },
+    );
   }
 
   Object? _resolve(RequestOptions options) {
@@ -46,8 +51,9 @@ final class _RoutingAdapter implements HttpClientAdapter {
 void main() {
   YuvomiApi apiWith(_RoutingAdapter adapter) {
     final api = YuvomiApi(
-        baseUrl: 'http://test.local',
-        sessions: SessionManager(InMemoryStorage()));
+      baseUrl: 'http://test.local',
+      sessions: SessionManager(InMemoryStorage()),
+    );
     api.dio.httpClientAdapter = adapter;
     return api;
   }
@@ -90,7 +96,9 @@ void main() {
 
   test('createList posts the name and parses the response', () async {
     final adapter = _RoutingAdapter();
-    adapter.addRoute('POST', '/api/v1/shopping', {'data': {'id': 3, 'name': 'Nuova'}});
+    adapter.addRoute('POST', '/api/v1/shopping', {
+      'data': {'id': 3, 'name': 'Nuova'},
+    });
     final repo = ShoppingRepository(apiWith(adapter));
     final created = await repo.createList('Nuova');
 
@@ -102,8 +110,9 @@ void main() {
 
   test('toggleItem PATCHes is_checked', () async {
     final adapter = _RoutingAdapter();
-    adapter.addRoute('PATCH', '/api/v1/shopping/items/10',
-        {'data': {'id': 10, 'name': 'Latte', 'is_checked': 1}});
+    adapter.addRoute('PATCH', '/api/v1/shopping/items/10', {
+      'data': {'id': 10, 'name': 'Latte', 'is_checked': 1},
+    });
     final repo = ShoppingRepository(apiWith(adapter));
     final updated = await repo.toggleItem(10, true);
 
@@ -113,8 +122,9 @@ void main() {
 
   test('addItem sends name and optional quantity', () async {
     final adapter = _RoutingAdapter();
-    adapter.addRoute('POST', '/api/v1/shopping/1/items',
-        {'data': {'id': 12, 'name': 'Uova', 'quantity': '12'}});
+    adapter.addRoute('POST', '/api/v1/shopping/1/items', {
+      'data': {'id': 12, 'name': 'Uova', 'quantity': '12'},
+    });
     final repo = ShoppingRepository(apiWith(adapter));
     final created = await repo.addItem(1, name: 'Uova', quantity: '12');
 

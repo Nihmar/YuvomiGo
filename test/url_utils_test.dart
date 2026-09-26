@@ -8,8 +8,10 @@ void main() {
     });
 
     test('keeps https://', () {
-      expect(normalizeServerUrl('https://yuvomi.example:8443'),
-          'https://yuvomi.example:8443');
+      expect(
+        normalizeServerUrl('https://yuvomi.example:8443'),
+        'https://yuvomi.example:8443',
+      );
     });
 
     test('strips trailing slash', () {
@@ -17,7 +19,10 @@ void main() {
     });
 
     test('trims whitespace', () {
-      expect(normalizeServerUrl('  http://omvnas:4000  '), 'http://omvnas:4000');
+      expect(
+        normalizeServerUrl('  http://omvnas:4000  '),
+        'http://omvnas:4000',
+      );
     });
 
     test('throws on empty', () {
@@ -26,8 +31,10 @@ void main() {
     });
 
     test('throws on unsupported scheme', () {
-      expect(() => normalizeServerUrl('ftp://omvnas:4000'),
-          throwsFormatException);
+      expect(
+        () => normalizeServerUrl('ftp://omvnas:4000'),
+        throwsFormatException,
+      );
     });
 
     test('throws on missing host', () {

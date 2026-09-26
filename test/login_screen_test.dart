@@ -38,10 +38,7 @@ void main() {
   testWidgets('Login screen shows url, username, password fields', (
     tester,
   ) async {
-    await _pump(
-      tester,
-      FakeAuthController(const AuthUnauthenticated()),
-    );
+    await _pump(tester, FakeAuthController(const AuthUnauthenticated()));
 
     expect(find.byType(LoginScreen), findsOneWidget);
     expect(find.text('URL server'), findsOneWidget);

@@ -23,33 +23,32 @@ final class DashboardScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Esci',
-            onPressed: () =>
-                ref.read(authControllerProvider.notifier).logout(),
+            onPressed: () => ref.read(authControllerProvider.notifier).logout(),
           ),
         ],
       ),
       body: RefreshIndicator(
-      onRefresh: () async {
-        ref.invalidate(dashboardProvider);
-        await ref.read(dashboardProvider.future);
-      },
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        children: [
-          const _Greeting(),
-          const SizedBox(height: 16),
-          dashboard.when(
-            loading: () => const _CenteredSpinner(),
-            error: (e, _) => _ErrorTile(
-              message: 'Impossibile caricare la dashboard.',
-              detail: e.toString(),
-              onRetry: () {
-                ref.invalidate(dashboardProvider);
-              },
+        onRefresh: () async {
+          ref.invalidate(dashboardProvider);
+          await ref.read(dashboardProvider.future);
+        },
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          children: [
+            const _Greeting(),
+            const SizedBox(height: 16),
+            dashboard.when(
+              loading: () => const _CenteredSpinner(),
+              error: (e, _) => _ErrorTile(
+                message: 'Impossibile caricare la dashboard.',
+                detail: e.toString(),
+                onRetry: () {
+                  ref.invalidate(dashboardProvider);
+                },
+              ),
+              data: (d) => _DashboardBody(data: d),
             ),
-            data: (d) => _DashboardBody(data: d),
-          ),
-        ],
+          ],
         ),
       ),
     );
@@ -64,8 +63,10 @@ final class _Greeting extends ConsumerWidget {
     final state = ref.watch(authControllerProvider);
     final user = state is Authenticated ? state.user : null;
     final locale = Localizations.localeOf(context);
-    final today =
-        DateFormat('EEEE d MMMM', locale.toString()).format(DateTime.now());
+    final today = DateFormat(
+      'EEEE d MMMM',
+      locale.toString(),
+    ).format(DateTime.now());
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -93,8 +94,11 @@ final class _CenteredSpinner extends StatelessWidget {
 }
 
 final class _ErrorTile extends StatelessWidget {
-  const _ErrorTile(
-      {required this.message, required this.detail, required this.onRetry});
+  const _ErrorTile({
+    required this.message,
+    required this.detail,
+    required this.onRetry,
+  });
 
   final String message;
   final String detail;
@@ -117,8 +121,9 @@ final class _ErrorTile extends StatelessWidget {
                 Text(
                   message,
                   style: TextStyle(
-                      color: scheme.onErrorContainer,
-                      fontWeight: FontWeight.bold),
+                    color: scheme.onErrorContainer,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -159,9 +164,11 @@ final class _DashboardBody extends StatelessWidget {
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  Icon(Icons.inbox_outlined,
-                      size: 48,
-                      color: Theme.of(context).colorScheme.outline),
+                  Icon(
+                    Icons.inbox_outlined,
+                    size: 48,
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                   const SizedBox(height: 12),
                   Text(
                     'Niente in corso.\nI moduli Task, Calendario, Spesa e Note '
@@ -203,17 +210,19 @@ final class _TasksTile extends StatelessWidget {
             _TileHeader(
               icon: Icons.task_alt,
               title: 'Task',
-              trailing: data.overdueTaskCount != null &&
-                      data.overdueTaskCount! > 0
+              trailing:
+                  data.overdueTaskCount != null && data.overdueTaskCount! > 0
                   ? _Badge(label: '${data.overdueTaskCount} overdue')
                   : (data.openTaskCount != null
-                      ? _Badge(label: '${data.openTaskCount} aperti')
-                      : null),
+                        ? _Badge(label: '${data.openTaskCount} aperti')
+                        : null),
             ),
             const SizedBox(height: 12),
             if (data.urgentTasks.isEmpty)
-              Text('Nessun task urgente.',
-                  style: Theme.of(context).textTheme.bodyMedium)
+              Text(
+                'Nessun task urgente.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              )
             else
               ...data.urgentTasks.take(5).map((t) => _taskRow(context, t)),
           ],
@@ -253,21 +262,25 @@ final class _EventsTile extends StatelessWidget {
           children: [
             _TileHeader(icon: Icons.event, title: 'Prossimi eventi'),
             const SizedBox(height: 12),
-            ...events.take(5).map(
-              (e) => ListTile(
-                dense: true,
-                leading: CircleAvatar(
-                  backgroundColor:
-                      Theme.of(context).colorScheme.primaryContainer,
-                  child: Icon(Icons.event,
-                      color: Theme.of(context)
+            ...events
+                .take(5)
+                .map(
+                  (e) => ListTile(
+                    dense: true,
+                    leading: CircleAvatar(
+                      backgroundColor: Theme.of(context)
                           .colorScheme
-                          .onPrimaryContainer, size: 20),
+                          .primaryContainer,
+                      child: Icon(
+                        Icons.event,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        size: 20,
+                      ),
+                    ),
+                    title: Text(e.title),
+                    subtitle: Text(_formatEvent(e, locale)),
+                  ),
                 ),
-                title: Text(e.title),
-                subtitle: Text(_formatEvent(e, locale)),
-              ),
-            ),
           ],
         ),
       ),
@@ -279,9 +292,11 @@ final class _EventsTile extends StatelessWidget {
     final dt = DateTime.tryParse(e.startDatetime!);
     if (dt == null) return e.startDatetime!;
     final parts = <String>[];
-    parts.add(e.allDay
-        ? DateFormat('d MMMM', locale).format(dt)
-        : DateFormat('d MMMM · HH:mm', locale).format(dt));
+    parts.add(
+      e.allDay
+          ? DateFormat('d MMMM', locale).format(dt)
+          : DateFormat('d MMMM · HH:mm', locale).format(dt),
+    );
     if (e.location != null && e.location!.isNotEmpty) parts.add(e.location!);
     return parts.join(' · ');
   }
@@ -310,8 +325,10 @@ final class _ShoppingTile extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             if (data.shoppingLists.isEmpty)
-              Text('Nessuna lista con articoli aperti.',
-                  style: Theme.of(context).textTheme.bodyMedium)
+              Text(
+                'Nessuna lista con articoli aperti.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              )
             else
               ...data.shoppingLists
                   .take(3)
@@ -342,8 +359,11 @@ final class _ShoppingTile extends StatelessWidget {
             Text(
               list.items
                   .take(6)
-                  .map((i) =>
-                      i.quantity == null ? i.name : '${i.name} (${i.quantity})')
+                  .map(
+                    (i) => i.quantity == null
+                        ? i.name
+                        : '${i.name} (${i.quantity})',
+                  )
                   .join(' · '),
               style: Theme.of(context).textTheme.bodySmall,
             ),
@@ -373,18 +393,20 @@ final class _NotesTile extends StatelessWidget {
               trailing: _Badge(label: '${data.pinnedNotesCount} pinnate'),
             ),
             const SizedBox(height: 12),
-            ...data.pinnedNotes.take(5).map(
-              (n) => ListTile(
-                dense: true,
-                leading: Icon(
-                  Icons.format_quote,
-                  color: Theme.of(context).colorScheme.outline,
-                  size: 20,
+            ...data.pinnedNotes
+                .take(5)
+                .map(
+                  (n) => ListTile(
+                    dense: true,
+                    leading: Icon(
+                      Icons.format_quote,
+                      color: Theme.of(context).colorScheme.outline,
+                      size: 20,
+                    ),
+                    title: Text(n.title ?? n.content),
+                    subtitle: Text(n.authorName ?? ''),
+                  ),
                 ),
-                title: Text(n.title ?? n.content),
-                subtitle: Text(n.authorName ?? ''),
-              ),
-            ),
           ],
         ),
       ),
@@ -406,8 +428,8 @@ final class _TileHeader extends StatelessWidget {
         Icon(icon, size: 22, color: Theme.of(context).colorScheme.primary),
         const SizedBox(width: 8),
         Expanded(
-            child:
-                Text(title, style: Theme.of(context).textTheme.titleMedium)),
+          child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+        ),
         ?trailing,
       ],
     );
@@ -429,9 +451,9 @@ final class _Badge extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
-          label,
-          style: TextStyle(
-              color: scheme.onSecondaryContainer, fontSize: 12)),
+        label,
+        style: TextStyle(color: scheme.onSecondaryContainer, fontSize: 12),
+      ),
     );
   }
 }

@@ -18,11 +18,11 @@ final class ShoppingList {
   int get openCount => itemTotal - itemChecked;
 
   factory ShoppingList.fromJson(Map<String, dynamic> json) => ShoppingList(
-        id: _asInt(json['id']) ?? -1,
-        name: json['name'] as String? ?? '',
-        itemTotal: _asInt(json['item_total']) ?? 0,
-        itemChecked: _asInt(json['item_checked']) ?? 0,
-      );
+    id: _asInt(json['id']) ?? -1,
+    name: json['name'] as String? ?? '',
+    itemTotal: _asInt(json['item_total']) ?? 0,
+    itemChecked: _asInt(json['item_checked']) ?? 0,
+  );
 }
 
 final class ShoppingItem {
@@ -41,12 +41,12 @@ final class ShoppingItem {
   final bool isChecked;
 
   factory ShoppingItem.fromJson(Map<String, dynamic> json) => ShoppingItem(
-        id: _asInt(json['id']) ?? -1,
-        name: json['name'] as String? ?? '',
-        quantity: json['quantity'] as String?,
-        category: json['category'] as String? ?? 'Sonstiges',
-        isChecked: _asBool(json['is_checked']),
-      );
+    id: _asInt(json['id']) ?? -1,
+    name: json['name'] as String? ?? '',
+    quantity: json['quantity'] as String?,
+    category: json['category'] as String? ?? 'Sonstiges',
+    isChecked: _asBool(json['is_checked']),
+  );
 }
 
 int? _asInt(Object? v) => v is int ? v : (v is num ? v.toInt() : null);

@@ -82,15 +82,15 @@ final class DashTask {
   final String? assignedColor;
 
   factory DashTask.fromJson(Map<String, dynamic> json) => DashTask(
-        id: json['id'] is int ? json['id'] as int : -1,
-        title: json['title'] as String? ?? '',
-        priority: json['priority'] as String? ?? 'none',
-        status: json['status'] as String? ?? 'open',
-        dueDate: json['due_date'] as String?,
-        dueTime: json['due_time'] as String?,
-        assignedName: json['assigned_name'] as String?,
-        assignedColor: json['assigned_color'] as String?,
-      );
+    id: json['id'] is int ? json['id'] as int : -1,
+    title: json['title'] as String? ?? '',
+    priority: json['priority'] as String? ?? 'none',
+    status: json['status'] as String? ?? 'open',
+    dueDate: json['due_date'] as String?,
+    dueTime: json['due_time'] as String?,
+    assignedName: json['assigned_name'] as String?,
+    assignedColor: json['assigned_color'] as String?,
+  );
 }
 
 /// Un evento (riga DB `calendar_events`, serializzata dal server).
@@ -112,13 +112,13 @@ final class DashEvent {
   final String? color;
 
   factory DashEvent.fromJson(Map<String, dynamic> json) => DashEvent(
-        id: json['id'] is int ? json['id'] as int : -1,
-        title: json['title'] as String? ?? '',
-        startDatetime: json['start_datetime'] as String?,
-        allDay: _asBool(json['all_day']),
-        location: json['location'] as String?,
-        color: json['color'] as String?,
-      );
+    id: json['id'] is int ? json['id'] as int : -1,
+    title: json['title'] as String? ?? '',
+    startDatetime: json['start_datetime'] as String?,
+    allDay: _asBool(json['all_day']),
+    location: json['location'] as String?,
+    color: json['color'] as String?,
+  );
 }
 
 /// Una nota (riga DB `notes` + colonne autore).
@@ -142,14 +142,14 @@ final class DashNote {
   final String? updatedAt;
 
   factory DashNote.fromJson(Map<String, dynamic> json) => DashNote(
-        id: json['id'] is int ? json['id'] as int : -1,
-        title: json['title'] as String?,
-        content: json['content'] as String? ?? '',
-        pinned: _asBool(json['pinned']),
-        color: json['color'] as String?,
-        authorName: json['author_name'] as String?,
-        updatedAt: json['updated_at'] as String?,
-      );
+    id: json['id'] is int ? json['id'] as int : -1,
+    title: json['title'] as String?,
+    content: json['content'] as String? ?? '',
+    pinned: _asBool(json['pinned']),
+    color: json['color'] as String?,
+    authorName: json['author_name'] as String?,
+    updatedAt: json['updated_at'] as String?,
+  );
 }
 
 /// Una lista di spesa con gli articoli aperti.
@@ -171,9 +171,9 @@ final class DashShoppingList {
   factory DashShoppingList.fromJson(Map<String, dynamic> json) {
     final items = (json['items'] is List)
         ? (json['items'] as List)
-            .whereType<Map<String, dynamic>>()
-            .map(DashShoppingItem.fromJson)
-            .toList()
+              .whereType<Map<String, dynamic>>()
+              .map(DashShoppingItem.fromJson)
+              .toList()
         : const <DashShoppingItem>[];
     return DashShoppingList(
       id: json['id'] is int ? json['id'] as int : -1,

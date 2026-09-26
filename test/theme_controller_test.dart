@@ -6,10 +6,8 @@ import 'package:yuvomigo/features/theme/theme_controller.dart';
 import 'utils/in_memory_storage.dart';
 
 ProviderContainer _container(InMemoryStorage storage) => ProviderContainer(
-      overrides: [
-        secureStorageProvider.overrideWithValue(storage),
-      ],
-    );
+  overrides: [secureStorageProvider.overrideWithValue(storage)],
+);
 
 void main() {
   group('ThemeController', () {

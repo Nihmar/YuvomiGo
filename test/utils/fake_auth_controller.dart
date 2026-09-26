@@ -4,13 +4,13 @@ import 'package:yuvomigo/features/auth/auth_controller.dart';
 import 'package:yuvomigo/features/auth/auth_state.dart';
 
 User fakeUser() => User(
-      avatarColor: '#FF6B35',
-      displayName: 'Utente Test',
-      familyRole: 'parent',
-      id: 1,
-      role: 'admin',
-      username: 'test',
-    );
+  avatarColor: '#FF6B35',
+  displayName: 'Utente Test',
+  familyRole: 'parent',
+  id: 1,
+  role: 'admin',
+  username: 'test',
+);
 
 /// AuthController fake condiviso: niente HTTP, stato fisso, login/2FA simulati.
 class FakeAuthController extends AuthController {

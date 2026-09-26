@@ -15,16 +15,15 @@ final yuvomiApiProvider = Provider<YuvomiApi?>((ref) {
 final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) {
   final api = ref.watch(yuvomiApiProvider);
   if (api == null) {
-    throw StateError(
-      'DashboardRepository richiesto senza sessione attiva',
-    );
+    throw StateError('DashboardRepository richiesto senza sessione attiva');
   }
   return DashboardRepository(api);
 });
 
 /// Dati della dashboard (fetch una volta; lo screen refresha su pull).
-final dashboardProvider =
-    FutureProvider.autoDispose<DashboardData>((ref) async {
+final dashboardProvider = FutureProvider.autoDispose<DashboardData>((
+  ref,
+) async {
   final repo = ref.watch(dashboardRepositoryProvider);
   return repo.fetch();
 });

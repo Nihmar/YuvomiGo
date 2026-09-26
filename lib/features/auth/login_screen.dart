@@ -58,7 +58,9 @@ final class _LoginScreenState extends ConsumerState<LoginScreen> {
       _submitting = true;
     });
     try {
-      await ref.read(authControllerProvider.notifier).login(
+      await ref
+          .read(authControllerProvider.notifier)
+          .login(
             serverUrl: _urlController.text,
             username: _usernameController.text.trim(),
             password: _passwordController.text,
@@ -167,8 +169,9 @@ final class _LoginScreenState extends ConsumerState<LoginScreen> {
                         labelText: 'Username',
                         prefixIcon: Icon(Icons.person),
                       ),
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Inserisci l\'username.' : null,
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Inserisci l\'username.'
+                          : null,
                       textInputAction: TextInputAction.next,
                     ),
                     const SizedBox(height: 16),
@@ -179,8 +182,9 @@ final class _LoginScreenState extends ConsumerState<LoginScreen> {
                         labelText: 'Password',
                         prefixIcon: Icon(Icons.lock),
                       ),
-                      validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Inserisci la password.' : null,
+                      validator: (v) => (v == null || v.isEmpty)
+                          ? 'Inserisci la password.'
+                          : null,
                       textInputAction: TextInputAction.done,
                       onFieldSubmitted: (_) => _submitCredentials(),
                     ),

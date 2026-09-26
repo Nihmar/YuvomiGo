@@ -32,9 +32,7 @@ ApiError fromDioException(DioException e) {
   final statusCode = e.response?.statusCode;
   if (statusCode == null) {
     // Errore di rete: timeout, DNS, connessione rifiutata, certificato.
-    return ApiNetworkError(
-      'Impossibile raggiungere il server: ${e.message}',
-    );
+    return ApiNetworkError('Impossibile raggiungere il server: ${e.message}');
   }
   if (statusCode == 401) {
     final body = e.response?.data;

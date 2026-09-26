@@ -13,8 +13,8 @@ final taskRepositoryProvider = Provider<TaskRepository>((ref) {
 /// lo screen lo mostra come SnackBar. Null = nessuna azione fallita di recente.
 final tasksActionErrorProvider =
     NotifierProvider<TasksActionErrorNotifier, Object?>(
-  TasksActionErrorNotifier.new,
-);
+      TasksActionErrorNotifier.new,
+    );
 
 final class TasksActionErrorNotifier extends Notifier<Object?> {
   @override
@@ -26,8 +26,8 @@ final class TasksActionErrorNotifier extends Notifier<Object?> {
 
 final tasksProvider =
     NotifierProvider.autoDispose<TasksNotifier, AsyncValue<List<Task>>>(
-  TasksNotifier.new,
-);
+      TasksNotifier.new,
+    );
 
 final class TasksNotifier extends Notifier<AsyncValue<List<Task>>> {
   bool _loading = false;
@@ -58,8 +58,11 @@ final class TasksNotifier extends Notifier<AsyncValue<List<Task>>> {
     final repo = ref.read(taskRepositoryProvider);
     ref.read(tasksActionErrorProvider.notifier).clear();
     try {
-      final created =
-          await repo.createTask(title: title, dueDate: dueDate, priority: priority);
+      final created = await repo.createTask(
+        title: title,
+        dueDate: dueDate,
+        priority: priority,
+      );
       final tasks = [...state.value ?? const <Task>[], created]
         ..sort(compareTasksByDueDate);
       state = AsyncData(tasks);

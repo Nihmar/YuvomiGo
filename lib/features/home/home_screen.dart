@@ -20,9 +20,18 @@ final class _HomeScreenState extends ConsumerState<HomeScreen> {
   static const _tabs = [
     _Tab('/dashboard', Icons.dashboard_outlined, Icons.dashboard, 'Dashboard'),
     _Tab('/tasks', Icons.task_alt_outlined, Icons.task_alt, 'Task'),
-    _Tab('/shopping', Icons.shopping_cart_outlined, Icons.shopping_cart, 'Spesa'),
-    _Tab('/calendar',
-        Icons.calendar_month_outlined, Icons.calendar_month, 'Calendario'),
+    _Tab(
+      '/shopping',
+      Icons.shopping_cart_outlined,
+      Icons.shopping_cart,
+      'Spesa',
+    ),
+    _Tab(
+      '/calendar',
+      Icons.calendar_month_outlined,
+      Icons.calendar_month,
+      'Calendario',
+    ),
     _Tab('/notes', Icons.sticky_note_2_outlined, Icons.sticky_note_2, 'Note'),
   ];
 

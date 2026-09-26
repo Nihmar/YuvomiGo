@@ -15,10 +15,12 @@ import 'utils/in_memory_storage.dart';
 
 final class FakeNoteRepository extends NoteRepository {
   FakeNoteRepository()
-      : super(YuvomiApi(
+    : super(
+        YuvomiApi(
           baseUrl: 'http://fake.local',
           sessions: SessionManager(InMemoryStorage()),
-        ));
+        ),
+      );
 
   final List<Note> notes = [
     Note(id: 1, content: 'lista', title: 'Spesa'),
@@ -30,20 +32,30 @@ final class FakeNoteRepository extends NoteRepository {
   Future<List<Note>> fetchNotes() async => notes.toList();
 
   @override
-  Future<Note> createNote(
-      {required String content,
-      String? title,
-      String? color,
-      bool pinned = false}) {
+  Future<Note> createNote({
+    required String content,
+    String? title,
+    String? color,
+    bool pinned = false,
+  }) {
     final n = Note(
-        id: _nextId++, content: content, title: title, pinned: pinned);
+      id: _nextId++,
+      content: content,
+      title: title,
+      pinned: pinned,
+    );
     notes.add(n);
     return Future.value(n);
   }
 
   @override
-  Future<Note> updateNote(int id,
-      {String? content, String? title, String? color, bool? pinned}) {
+  Future<Note> updateNote(
+    int id, {
+    String? content,
+    String? title,
+    String? color,
+    bool? pinned,
+  }) {
     final idx = notes.indexWhere((n) => n.id == id);
     final old = notes[idx];
     final updated = Note(

@@ -15,10 +15,12 @@ import 'utils/in_memory_storage.dart';
 
 final class FakeCalendarRepository extends CalendarRepository {
   FakeCalendarRepository()
-      : super(YuvomiApi(
+    : super(
+        YuvomiApi(
           baseUrl: 'http://fake.local',
           sessions: SessionManager(InMemoryStorage()),
-        ));
+        ),
+      );
 
   final List<CalendarEvent> events = [
     CalendarEvent(
@@ -68,9 +70,6 @@ void main() {
     await tester.pumpWidget(_pump(const CalendarScreen(), repo));
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('Nessun evento nei prossimi 7 giorni.'),
-      findsOneWidget,
-    );
+    expect(find.text('Nessun evento nei prossimi 7 giorni.'), findsOneWidget);
   });
 }

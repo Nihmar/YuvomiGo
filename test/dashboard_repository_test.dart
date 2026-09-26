@@ -20,8 +20,13 @@ final class _JsonAdapter implements HttpClientAdapter {
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
-    return ResponseBody.fromString(jsonEncode(body), 200,
-        headers: const {'content-type': ['application/json']});
+    return ResponseBody.fromString(
+      jsonEncode(body),
+      200,
+      headers: const {
+        'content-type': ['application/json'],
+      },
+    );
   }
 
   @override
@@ -32,18 +37,16 @@ void main() {
   test('fetch parses the dashboard payload', () async {
     final sessions = SessionManager(InMemoryStorage());
     final api = YuvomiApi(baseUrl: 'http://test.local', sessions: sessions);
-    api.dio.httpClientAdapter = _JsonAdapter(
-      {
-        'urgentTasks': [
-          {'id': 1, 'title': 'Paga bolletta', 'priority': 'urgent'},
-        ],
-        'openTaskCount': 7,
-        'pinnedNotes': [
-          {'id': 2, 'title': 'WIFI', 'content': '1234', 'pinned': 1},
-        ],
-        'pinnedNotesCount': 1,
-      },
-    );
+    api.dio.httpClientAdapter = _JsonAdapter({
+      'urgentTasks': [
+        {'id': 1, 'title': 'Paga bolletta', 'priority': 'urgent'},
+      ],
+      'openTaskCount': 7,
+      'pinnedNotes': [
+        {'id': 2, 'title': 'WIFI', 'content': '1234', 'pinned': 1},
+      ],
+      'pinnedNotesCount': 1,
+    });
 
     final repo = DashboardRepository(api);
     final data = await repo.fetch();

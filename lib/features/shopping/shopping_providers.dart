@@ -13,8 +13,8 @@ final shoppingRepositoryProvider = Provider<ShoppingRepository>((ref) {
 /// gli screen lo mostrano come SnackBar. Null = nessuna azione fallita.
 final shoppingActionErrorProvider =
     NotifierProvider<ShoppingActionErrorNotifier, Object?>(
-  ShoppingActionErrorNotifier.new,
-);
+      ShoppingActionErrorNotifier.new,
+    );
 
 final class ShoppingActionErrorNotifier extends Notifier<Object?> {
   @override
@@ -89,9 +89,10 @@ class ShoppingListsNotifier extends Notifier<AsyncValue<List<ShoppingList>>> {
 }
 
 final shoppingListsProvider =
-    NotifierProvider.autoDispose<ShoppingListsNotifier, AsyncValue<List<ShoppingList>>>(
-  ShoppingListsNotifier.new,
-);
+    NotifierProvider.autoDispose<
+      ShoppingListsNotifier,
+      AsyncValue<List<ShoppingList>>
+    >(ShoppingListsNotifier.new);
 
 /// Gli articoli di una lista (Family su listId) + azioni.
 class ShoppingItemsNotifier extends Notifier<AsyncValue<List<ShoppingItem>>> {
@@ -122,7 +123,11 @@ class ShoppingItemsNotifier extends Notifier<AsyncValue<List<ShoppingItem>>> {
     final repo = ref.read(shoppingRepositoryProvider);
     _errors(ref).clear();
     try {
-      final created = await repo.addItem(listId, name: name, quantity: quantity);
+      final created = await repo.addItem(
+        listId,
+        name: name,
+        quantity: quantity,
+      );
       final prev = state.value ?? const <ShoppingItem>[];
       state = AsyncData([...prev, created]);
     } catch (e) {
@@ -155,9 +160,7 @@ class ShoppingItemsNotifier extends Notifier<AsyncValue<List<ShoppingItem>>> {
   }
 }
 
-final shoppingItemsProvider = NotifierProvider.family.autoDispose<
-  ShoppingItemsNotifier,
-  AsyncValue<List<ShoppingItem>>,
-  int>(
-  (listId) => ShoppingItemsNotifier(listId),
-);
+final shoppingItemsProvider = NotifierProvider.family
+    .autoDispose<ShoppingItemsNotifier, AsyncValue<List<ShoppingItem>>, int>(
+      (listId) => ShoppingItemsNotifier(listId),
+    );

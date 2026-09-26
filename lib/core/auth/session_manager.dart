@@ -23,16 +23,16 @@ final class StoredSession {
   final String csrfToken;
 
   Map<String, String> toMap() => {
-        'serverUrl': serverUrl,
-        'sessionCookie': sessionCookie,
-        'csrfToken': csrfToken,
-      };
+    'serverUrl': serverUrl,
+    'sessionCookie': sessionCookie,
+    'csrfToken': csrfToken,
+  };
 
   factory StoredSession.fromMap(Map<String, String> map) => StoredSession(
-        serverUrl: map['serverUrl']!,
-        sessionCookie: map['sessionCookie']!,
-        csrfToken: map['csrfToken']!,
-      );
+    serverUrl: map['serverUrl']!,
+    sessionCookie: map['sessionCookie']!,
+    csrfToken: map['csrfToken']!,
+  );
 
   String encode() => jsonEncode(toMap());
 
@@ -57,8 +57,7 @@ final class SessionManager {
   StoredSession? _session;
 
   StoredSession? get session => _session;
-  bool get hasSession =>
-      _session != null && _session!.sessionCookie.isNotEmpty;
+  bool get hasSession => _session != null && _session!.sessionCookie.isNotEmpty;
 
   Future<StoredSession?> load() async {
     final raw = await _storage.read(_key);

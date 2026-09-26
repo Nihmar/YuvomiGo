@@ -34,18 +34,20 @@ final class ShoppingListDetailScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Impossibile caricare gli articoli.',
-                        style: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onErrorContainer,
-                            fontWeight: FontWeight.bold)),
+                    Text(
+                      'Impossibile caricare gli articoli.',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onErrorContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    Text(e.toString(),
-                        style: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onErrorContainer)),
+                    Text(
+                      e.toString(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onErrorContainer,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -57,9 +59,11 @@ final class ShoppingListDetailScreen extends ConsumerWidget {
             return ListView(
               padding: const EdgeInsets.all(24),
               children: [
-                Text('Nessun articolo.\nUsa "Aggiungi" per aggiungerne uno.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium),
+                Text(
+                  'Nessun articolo.\nUsa "Aggiungi" per aggiungerne uno.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
               ],
             );
           }
@@ -80,8 +84,9 @@ final class ShoppingListDetailScreen extends ConsumerWidget {
                 title: Text(
                   label,
                   style: TextStyle(
-                    decoration:
-                        item.isChecked ? TextDecoration.lineThrough : null,
+                    decoration: item.isChecked
+                        ? TextDecoration.lineThrough
+                        : null,
                     color: item.isChecked
                         ? Theme.of(context).textTheme.bodySmall?.color
                         : null,
@@ -158,10 +163,9 @@ final class ShoppingListDetailScreen extends ConsumerWidget {
     final name = nameController.text.trim();
     final quantity = qtyController.text.trim();
     if (name.isNotEmpty) {
-      ref.read(shoppingItemsProvider(listId).notifier).add(
-            name,
-            quantity: quantity.isEmpty ? null : quantity,
-          );
+      ref
+          .read(shoppingItemsProvider(listId).notifier)
+          .add(name, quantity: quantity.isEmpty ? null : quantity);
     }
     Navigator.of(dialogContext).pop();
   }

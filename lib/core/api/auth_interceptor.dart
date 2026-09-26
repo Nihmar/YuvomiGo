@@ -5,12 +5,7 @@ import '../auth/session_manager.dart';
 const String _cookieHeader = 'Cookie';
 const String _csrfHeader = 'X-CSRF-Token';
 
-final Set<String> _stateChangingMethods = {
-  'POST',
-  'PUT',
-  'PATCH',
-  'DELETE',
-};
+final Set<String> _stateChangingMethods = {'POST', 'PUT', 'PATCH', 'DELETE'};
 
 /// Interceptor che gestisce l'autenticazione a sessione Yuvomi:
 ///

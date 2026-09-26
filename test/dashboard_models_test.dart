@@ -100,8 +100,14 @@ void main() {
     });
 
     test('DashEvent all_day bool from int', () {
-      expect(DashEvent.fromJson({'id': 1, 'title': 'A', 'all_day': 1}).allDay, isTrue);
-      expect(DashEvent.fromJson({'id': 1, 'title': 'A', 'all_day': 0}).allDay, isFalse);
+      expect(
+        DashEvent.fromJson({'id': 1, 'title': 'A', 'all_day': 1}).allDay,
+        isTrue,
+      );
+      expect(
+        DashEvent.fromJson({'id': 1, 'title': 'A', 'all_day': 0}).allDay,
+        isFalse,
+      );
     });
 
     test('DashShoppingItem quantity optional', () {

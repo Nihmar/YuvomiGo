@@ -15,7 +15,11 @@ final _sample = DashboardData(
   ],
   urgentTasks: [
     DashTask(
-        id: 10, title: 'Paga bolletta', priority: 'urgent', dueDate: '2026-09-20'),
+      id: 10,
+      title: 'Paga bolletta',
+      priority: 'urgent',
+      dueDate: '2026-09-20',
+    ),
   ],
   openTaskCount: 7,
   overdueTaskCount: 2,
@@ -75,9 +79,7 @@ void main() {
           authControllerProvider.overrideWith(
             () => FakeAuthController(Authenticated(user: fakeUser())),
           ),
-          dashboardProvider.overrideWithValue(
-            const AsyncData(DashboardData()),
-          ),
+          dashboardProvider.overrideWithValue(const AsyncData(DashboardData())),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),

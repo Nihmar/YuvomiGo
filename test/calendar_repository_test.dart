@@ -27,13 +27,21 @@ final class _RoutingAdapter implements HttpClientAdapter {
     for (final r in routes) {
       if (r['method'] == options.method && r['path'] == options.path) {
         return ResponseBody.fromString(
-            jsonEncode(r['body']),
-            200,
-            headers: const {'content-type': ['application/json']});
+          jsonEncode(r['body']),
+          200,
+          headers: const {
+            'content-type': ['application/json'],
+          },
+        );
       }
     }
-    return ResponseBody.fromString(jsonEncode({'data': <Object>[]}), 200,
-        headers: const {'content-type': ['application/json']});
+    return ResponseBody.fromString(
+      jsonEncode({'data': <Object>[]}),
+      200,
+      headers: const {
+        'content-type': ['application/json'],
+      },
+    );
   }
 
   @override
@@ -43,8 +51,9 @@ final class _RoutingAdapter implements HttpClientAdapter {
 void main() {
   YuvomiApi apiWith(_RoutingAdapter adapter) {
     final api = YuvomiApi(
-        baseUrl: 'http://test.local',
-        sessions: SessionManager(InMemoryStorage()));
+      baseUrl: 'http://test.local',
+      sessions: SessionManager(InMemoryStorage()),
+    );
     api.dio.httpClientAdapter = adapter;
     return api;
   }

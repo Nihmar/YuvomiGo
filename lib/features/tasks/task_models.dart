@@ -3,16 +3,16 @@ enum TaskStatus { open, inProgress, done }
 
 extension TaskStatusX on TaskStatus {
   String get wire => switch (this) {
-        TaskStatus.open => 'open',
-        TaskStatus.inProgress => 'in_progress',
-        TaskStatus.done => 'done',
-      };
+    TaskStatus.open => 'open',
+    TaskStatus.inProgress => 'in_progress',
+    TaskStatus.done => 'done',
+  };
 
   static TaskStatus fromWire(String? value) => switch (value) {
-        'in_progress' => TaskStatus.inProgress,
-        'done' => TaskStatus.done,
-        _ => TaskStatus.open,
-      };
+    'in_progress' => TaskStatus.inProgress,
+    'done' => TaskStatus.done,
+    _ => TaskStatus.open,
+  };
 }
 
 /// Ordinamento MVP: per due_date (null = ultime).
@@ -50,8 +50,8 @@ final class Task {
     final isRecurring = recurring is bool
         ? recurring
         : recurring is num
-            ? recurring == 1
-            : false;
+        ? recurring == 1
+        : false;
     return Task(
       id: (json['id'] as num).toInt(),
       title: json['title'] as String? ?? '',
