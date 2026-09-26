@@ -30,9 +30,17 @@ final class DashboardScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(dashboardProvider);
-          await ref.read(dashboardProvider.future);
+          try {
+            await ref.read(dashboardProvider.future);
+          } catch (_) {
+            // L'errore è già nello stato del provider (tile con "Riprova"):
+            // qui si evita solo l'errore asincrono sciolto del refresh.
+          }
         },
         child: ListView(
+          // Contenuto corto (stato vuoto/errore): senza questa physics il
+          // trascinamento non parte e il refresh non è raggiungibile.
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
             const _Greeting(),
@@ -171,8 +179,8 @@ final class _DashboardBody extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Niente in corso.\nI moduli Task, Calendario, Spesa e Note '
-                    'verranno completati in M2.',
+                    'Niente in corso.\nCrea task, liste di spesa o note, '
+                    'o aggiungi un evento al calendario.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),

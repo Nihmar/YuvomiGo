@@ -89,6 +89,26 @@ void main() {
     expect(find.textContaining('Niente in corso'), findsOneWidget);
   });
 
+  testWidgets('Dashboard list is always scrollable for pull-to-refresh', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(
+            () => FakeAuthController(Authenticated(user: fakeUser())),
+          ),
+          dashboardProvider.overrideWithValue(const AsyncData(DashboardData())),
+        ],
+        child: const MaterialApp(home: DashboardScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final listView = tester.widget<ListView>(find.byType(ListView));
+    expect(listView.physics, isA<AlwaysScrollableScrollPhysics>());
+  });
+
   testWidgets('Dashboard shows error tile with retry on failure', (
     tester,
   ) async {
