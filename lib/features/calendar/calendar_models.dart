@@ -32,3 +32,15 @@ final class CalendarEvent {
     );
   }
 }
+
+/// Ordina per istante di inizio: confronta i `DateTime` (non le stringhe),
+/// così eventi locali e instant con zona restano nell'ordine giusto.
+/// Le date non parsabili finiscono in fondo.
+int compareEventsByStart(CalendarEvent a, CalendarEvent b) {
+  final ad = DateTime.tryParse(a.startDatetime);
+  final bd = DateTime.tryParse(b.startDatetime);
+  if (ad == null && bd == null) return 0;
+  if (ad == null) return 1;
+  if (bd == null) return -1;
+  return ad.compareTo(bd);
+}

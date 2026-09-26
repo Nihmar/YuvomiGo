@@ -26,7 +26,7 @@ base class CalendarRepository {
       final list = raw
           .map((e) => CalendarEvent.fromJson(e as Map<String, dynamic>))
           .toList();
-      list.sort((a, b) => a.startDatetime.compareTo(b.startDatetime));
+      list.sort(compareEventsByStart);
       return list;
     });
   }

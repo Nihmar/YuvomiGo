@@ -102,4 +102,23 @@ void main() {
     expect(events.first.id, 2); // prima
     expect(events[1].id, 1);
   });
+
+  test('sorts by instant across wall-time and zoned values', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('GET', '/api/v1/calendar', {
+      'data': [
+        {'id': 1, 'title': 'zoned', 'start_datetime': '2026-09-01T09:00:00Z'},
+        {'id': 2, 'title': 'wall', 'start_datetime': '2026-09-01T10:30:00'},
+      ],
+    });
+    final repo = CalendarRepository(apiWith(adapter));
+    final events = await repo.fetchRange('2026-08-30', '2026-09-06');
+
+    // L'ordine dipende dal fuso della macchina: quello che conta è che
+    // segua gli istanti, non il confronto tra stringhe.
+    final zoned = DateTime.parse('2026-09-01T09:00:00Z');
+    final wall = DateTime.parse('2026-09-01T10:30:00');
+    final expectedFirst = zoned.isBefore(wall) ? 1 : 2;
+    expect(events.first.id, expectedFirst);
+  });
 }

@@ -87,20 +87,34 @@ final class CalendarScreen extends ConsumerWidget {
   }
 }
 
-/// Raggruppa gli eventi per giorno (chiave 'YYYY-MM-DD').
+/// Raggruppa gli eventi per giorno locale (chiave 'YYYY-MM-DD').
+///
+/// La `start_datetime` può essere wall-time locale oppure un instant con
+/// zona (`Z`/offset) per i calendari sincronizzati: il giorno mostrato è
+/// quello del fuso dell'utente, non quello della stringa.
 Map<String, List<CalendarEvent>> _groupByDay(List<CalendarEvent> events) {
   final groups = <String, List<CalendarEvent>>{};
   for (final e in events) {
-    final date = e.startDatetime.length >= 10
-        ? e.startDatetime.substring(0, 10)
-        : 's.d.';
+    final dt = _parseLocal(e.startDatetime);
+    final date = dt == null ? 's.d.' : _dateKey(dt);
     groups.putIfAbsent(date, () => []).add(e);
   }
   return groups;
 }
 
+String _dateKey(DateTime dt) {
+  return '${dt.year.toString().padLeft(4, '0')}-'
+      '${dt.month.toString().padLeft(2, '0')}-'
+      '${dt.day.toString().padLeft(2, '0')}';
+}
+
+DateTime? _parseLocal(String iso) {
+  if (iso.isEmpty) return null;
+  return DateTime.tryParse(iso)?.toLocal();
+}
+
 String _timeOf(String iso) {
-  final parsed = DateTime.tryParse(iso);
+  final parsed = _parseLocal(iso);
   if (parsed == null) return '';
   final h = parsed.hour.toString().padLeft(2, '0');
   final m = parsed.minute.toString().padLeft(2, '0');

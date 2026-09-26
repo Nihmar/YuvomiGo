@@ -72,4 +72,22 @@ void main() {
 
     expect(find.text('Nessun evento nei prossimi 7 giorni.'), findsOneWidget);
   });
+
+  testWidgets('UTC events are shown in local time', (tester) async {
+    final repo = FakeCalendarRepository();
+    const iso = '2026-09-01T22:30:00Z';
+    repo.events
+      ..clear()
+      ..add(CalendarEvent(id: 3, title: 'Chiamata', startDatetime: iso));
+
+    await tester.pumpWidget(_pump(const CalendarScreen(), repo));
+    await tester.pumpAndSettle();
+
+    final local = DateTime.parse(iso).toLocal();
+    final expected =
+        '${local.hour.toString().padLeft(2, '0')}:'
+        '${local.minute.toString().padLeft(2, '0')}';
+    expect(find.text('Chiamata'), findsOneWidget);
+    expect(find.text(expected), findsOneWidget);
+  });
 }

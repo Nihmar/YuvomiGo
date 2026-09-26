@@ -39,15 +39,19 @@ final class CalendarEventsNotifier
 
   String _from() {
     final now = DateTime.now();
-    return '${now.year.toString().padLeft(4, '0')}-'
-        '${now.month.toString().padLeft(2, '0')}-'
-        '${now.day.toString().padLeft(2, '0')}';
+    return _dateKey(now);
   }
 
+  /// Oggi + 6 giorni: `to` è inclusivo, così la finestra copre esattamente
+  /// 7 giorni (oggi compreso), come dice la UI.
   String _to() {
-    final end = DateTime.now().add(const Duration(days: 7));
-    return '${end.year.toString().padLeft(4, '0')}-'
-        '${end.month.toString().padLeft(2, '0')}-'
-        '${end.day.toString().padLeft(2, '0')}';
+    final end = DateTime.now().add(const Duration(days: 6));
+    return _dateKey(end);
+  }
+
+  String _dateKey(DateTime dt) {
+    return '${dt.year.toString().padLeft(4, '0')}-'
+        '${dt.month.toString().padLeft(2, '0')}-'
+        '${dt.day.toString().padLeft(2, '0')}';
   }
 }
