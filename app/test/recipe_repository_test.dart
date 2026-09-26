@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:yuvomigo/core/api/yuvomi_api.dart';
 import 'package:yuvomigo/core/auth/session_manager.dart';
 import 'package:yuvomigo/data/repositories/recipe_repository.dart';
+import 'package:yuvomigo/features/recipes/recipe_models.dart';
 
 import 'utils/in_memory_storage.dart';
 
@@ -101,5 +102,78 @@ void main() {
     final repo = RecipeRepository(api);
 
     expect(await repo.fetchRecipes(), isEmpty);
+  });
+
+  test('createRecipe posts title, meal types and ingredients', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('POST', '/api/v1/recipes', {
+      'data': {'id': 9, 'title': 'Pizza', 'ingredients': <Object>[]},
+    });
+    final api = YuvomiApi(
+      baseUrl: 'http://test.local',
+      sessions: SessionManager(InMemoryStorage()),
+    );
+    api.dio.httpClientAdapter = adapter;
+    final repo = RecipeRepository(api);
+    final created = await repo.createRecipe(
+      title: 'Pizza',
+      mealTypes: const ['dinner'],
+      ingredients: const [
+        RecipeIngredient(name: 'Farina', quantity: '500g'),
+        RecipeIngredient(name: 'Pomodoro'),
+      ],
+    );
+
+    expect(created.id, 9);
+    expect(adapter.requests.first.data, {
+      'title': 'Pizza',
+      'notes': null,
+      'recipe_url': null,
+      'meal_types': ['dinner'],
+      'ingredients': [
+        {'name': 'Farina', 'quantity': '500g'},
+        {'name': 'Pomodoro'},
+      ],
+    });
+  });
+
+  test('updateRecipe PUTs the full recipe', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('PUT', '/api/v1/recipes/9', {
+      'data': {'id': 9, 'title': 'Pizza nuova', 'ingredients': <Object>[]},
+    });
+    final api = YuvomiApi(
+      baseUrl: 'http://test.local',
+      sessions: SessionManager(InMemoryStorage()),
+    );
+    api.dio.httpClientAdapter = adapter;
+    final repo = RecipeRepository(api);
+    await repo.updateRecipe(
+      9,
+      title: 'Pizza nuova',
+      notes: 'nota',
+      mealTypes: const ['lunch'],
+      ingredients: const [RecipeIngredient(name: 'Farina')],
+    );
+
+    expect(adapter.requests.first.method, 'PUT');
+    expect(adapter.requests.first.path, '/api/v1/recipes/9');
+    expect(adapter.requests.first.data['title'], 'Pizza nuova');
+    expect(adapter.requests.first.data['notes'], 'nota');
+  });
+
+  test('deleteRecipe issues a DELETE', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('DELETE', '/api/v1/recipes/9', {});
+    final api = YuvomiApi(
+      baseUrl: 'http://test.local',
+      sessions: SessionManager(InMemoryStorage()),
+    );
+    api.dio.httpClientAdapter = adapter;
+    final repo = RecipeRepository(api);
+    await repo.deleteRecipe(9);
+
+    expect(adapter.requests.first.method, 'DELETE');
+    expect(adapter.requests.first.path, '/api/v1/recipes/9');
   });
 }
