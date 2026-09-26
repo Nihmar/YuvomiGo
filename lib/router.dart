@@ -12,6 +12,7 @@ import 'package:yuvomigo/features/home/home_screen.dart';
 import 'package:yuvomigo/features/inventory/inventory_screen.dart';
 import 'package:yuvomigo/features/meals/meals_screen.dart';
 import 'package:yuvomigo/features/notes/notes_screen.dart';
+import 'package:yuvomigo/features/pantry/pantry_screen.dart';
 import 'package:yuvomigo/features/reminders/reminders_screen.dart';
 import 'package:yuvomigo/features/recipes/recipes_screen.dart';
 import 'package:yuvomigo/features/shopping/shopping_list_detail_screen.dart';
@@ -122,6 +123,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/inventory',
         name: 'inventory',
         builder: (context, state) => const InventoryScreen(),
+      ),
+      GoRoute(
+        path: '/pantry',
+        name: 'pantry',
+        builder: (context, state) => const PantryScreen(),
       ),
       GoRoute(
         path: '/settings',

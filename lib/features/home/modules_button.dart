@@ -20,6 +20,7 @@ final class ModulesButton extends StatelessWidget {
     ),
     (path: '/recipes', icon: Icons.menu_book_outlined, label: 'Ricette'),
     (path: '/inventory', icon: Icons.inventory_2_outlined, label: 'Inventario'),
+    (path: '/pantry', icon: Icons.kitchen_outlined, label: 'Dispensa'),
   ];
 
   @override
