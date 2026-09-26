@@ -45,7 +45,8 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       // Shell con bottom nav: le 5 tab MVP vivono sotto '/'.
       ShellRoute(
-        builder: (context, state, child) => HomeScreen(child: child),
+        builder: (context, state, child) =>
+            HomeScreen(currentPath: state.uri.path, child: child),
         routes: [
           GoRoute(
             path: '/dashboard',

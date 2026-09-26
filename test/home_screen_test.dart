@@ -4,12 +4,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:yuvomigo/core/api/yuvomi_api.dart';
 import 'package:yuvomigo/core/auth/session_manager.dart';
 import 'package:yuvomigo/data/repositories/calendar_repository.dart';
+import 'package:yuvomigo/data/repositories/shopping_repository.dart';
 import 'package:yuvomigo/features/auth/auth_controller.dart';
 import 'package:yuvomigo/features/auth/auth_state.dart';
 import 'package:yuvomigo/features/calendar/calendar_models.dart';
 import 'package:yuvomigo/features/calendar/calendar_providers.dart';
 import 'package:yuvomigo/features/dashboard/dashboard_models.dart';
 import 'package:yuvomigo/features/dashboard/dashboard_providers.dart';
+import 'package:yuvomigo/features/shopping/shopping_models.dart';
+import 'package:yuvomigo/features/shopping/shopping_providers.dart';
 import 'package:yuvomigo/app.dart';
 
 import 'utils/fake_auth_controller.dart';
@@ -38,6 +41,26 @@ final _sample = DashboardData(
   urgentTasks: [DashTask(id: 10, title: 'Paga bolletta', priority: 'urgent')],
   openTaskCount: 7,
 );
+
+final class _FakeShoppingRepository extends ShoppingRepository {
+  _FakeShoppingRepository()
+    : super(
+        YuvomiApi(
+          baseUrl: 'http://fake.local',
+          sessions: SessionManager(InMemoryStorage()),
+        ),
+      );
+
+  @override
+  Future<List<ShoppingList>> fetchLists() async => [
+    const ShoppingList(id: 1, name: 'Super'),
+  ];
+
+  @override
+  Future<List<ShoppingItem>> fetchItems(int listId) async => [
+    const ShoppingItem(id: 10, name: 'Latte'),
+  ];
+}
 
 void main() {
   testWidgets('Home shell shows five tab destinations', (tester) async {
@@ -106,5 +129,33 @@ void main() {
 
     // La tile task della dashboard è visibile nella tab iniziale.
     expect(find.text('Paga bolletta'), findsOneWidget);
+  });
+
+  testWidgets('A detail route keeps its module tab selected', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(
+            () => FakeAuthController(Authenticated(user: fakeUser())),
+          ),
+          dashboardProvider.overrideWithValue(AsyncData(_sample)),
+          shoppingRepositoryProvider.overrideWithValue(
+            _FakeShoppingRepository(),
+          ),
+        ],
+        child: const YuvomiGoApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Spesa'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Super'));
+    await tester.pumpAndSettle();
+
+    // Siamo su /shopping/1: la tab Spesa (indice 2) resta selezionata.
+    expect(find.text('Latte'), findsOneWidget);
+    final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
+    expect(navBar.selectedIndex, 2);
   });
 }
