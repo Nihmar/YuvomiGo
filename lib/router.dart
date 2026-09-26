@@ -7,6 +7,7 @@ import 'package:yuvomigo/features/auth/login_screen.dart';
 import 'package:yuvomigo/features/calendar/calendar_screen.dart';
 import 'package:yuvomigo/features/dashboard/dashboard_screen.dart';
 import 'package:yuvomigo/features/home/home_screen.dart';
+import 'package:yuvomigo/features/meals/meals_screen.dart';
 import 'package:yuvomigo/features/notes/notes_screen.dart';
 import 'package:yuvomigo/features/shopping/shopping_list_detail_screen.dart';
 import 'package:yuvomigo/features/shopping/shopping_screen.dart';
@@ -87,6 +88,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(
+        path: '/meals',
+        name: 'meals',
+        builder: (context, state) => const MealsScreen(),
+      ),
       GoRoute(
         path: '/settings',
         name: 'settings',
