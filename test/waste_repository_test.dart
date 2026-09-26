@@ -93,4 +93,78 @@ void main() {
     expect(pickups.last.hasNext, isFalse);
     expect(pickups[1].typeColor, '#2196F3');
   });
+
+  test('fetchTypes parses the configured types', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('GET', '/api/v1/waste/types', {
+      'data': [
+        {'id': 1, 'name': 'Carta', 'icon': 'paper', 'color': '#2196F3'},
+        {'id': 2, 'name': 'Vetro'},
+      ],
+    });
+    final repo = WasteRepository(apiWith(adapter));
+    final types = await repo.fetchTypes();
+
+    expect(types, hasLength(2));
+    expect(types.first.name, 'Carta');
+    expect(types.first.color, '#2196F3');
+  });
+
+  test('fetchPickups parses and sorts one-off pickups', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('GET', '/api/v1/waste/pickups', {
+      'data': [
+        {'id': 2, 'type_id': 1, 'date': '2026-10-02', 'note': 'b'},
+        {'id': 1, 'type_id': 2, 'date': '2026-10-01', 'note': null},
+      ],
+    });
+    final repo = WasteRepository(apiWith(adapter));
+    final pickups = await repo.fetchPickups();
+
+    expect(pickups, hasLength(2));
+    expect(pickups.first.id, 1);
+    expect(pickups.last.note, 'b');
+  });
+
+  test('createPickup posts type, date and note', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('POST', '/api/v1/waste/pickups', {
+      'data': {'id': 9, 'type_id': 1, 'date': '2026-10-05'},
+    });
+    final repo = WasteRepository(apiWith(adapter));
+    final created = await repo.createPickup(
+      typeId: 1,
+      date: '2026-10-05',
+      note: 'extra',
+    );
+
+    expect(created.id, 9);
+    expect(adapter.requests.first.data, {
+      'type_id': 1,
+      'date': '2026-10-05',
+      'note': 'extra',
+    });
+  });
+
+  test('updatePickup PUTs date and note', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('PUT', '/api/v1/waste/pickups/9', {
+      'data': {'id': 9, 'type_id': 1, 'date': '2026-10-06'},
+    });
+    final repo = WasteRepository(apiWith(adapter));
+    await repo.updatePickup(9, date: '2026-10-06');
+
+    expect(adapter.requests.first.method, 'PUT');
+    expect(adapter.requests.first.data['date'], '2026-10-06');
+  });
+
+  test('deletePickup issues a DELETE', () async {
+    final adapter = _RoutingAdapter();
+    adapter.addRoute('DELETE', '/api/v1/waste/pickups/9', {});
+    final repo = WasteRepository(apiWith(adapter));
+    await repo.deletePickup(9);
+
+    expect(adapter.requests.first.method, 'DELETE');
+    expect(adapter.requests.first.path, '/api/v1/waste/pickups/9');
+  });
 }

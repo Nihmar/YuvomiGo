@@ -61,3 +61,47 @@ int compareWastePickups(WasteNextPickup a, WasteNextPickup b) {
   if (byDate != 0) return byDate;
   return a.typeName.toLowerCase().compareTo(b.typeName.toLowerCase());
 }
+
+/// Un tipo di raccolta (server: `waste_types`).
+final class WasteType {
+  const WasteType({
+    required this.id,
+    required this.name,
+    this.icon,
+    this.color,
+  });
+
+  final int id;
+  final String name;
+  final String? icon;
+  final String? color;
+
+  factory WasteType.fromJson(Map<String, dynamic> json) => WasteType(
+    id: (json['id'] as num?)?.toInt() ?? -1,
+    name: json['name'] as String? ?? '',
+    icon: json['icon'] as String?,
+    color: json['color'] as String?,
+  );
+}
+
+/// Una raccolta straordinaria (server: `waste_one_off_pickups`).
+final class WastePickup {
+  const WastePickup({
+    required this.id,
+    required this.typeId,
+    required this.date,
+    this.note,
+  });
+
+  final int id;
+  final int typeId;
+  final String date; // 'YYYY-MM-DD'
+  final String? note;
+
+  factory WastePickup.fromJson(Map<String, dynamic> json) => WastePickup(
+    id: (json['id'] as num?)?.toInt() ?? -1,
+    typeId: (json['type_id'] as num?)?.toInt() ?? -1,
+    date: json['date'] as String? ?? '',
+    note: json['note'] as String?,
+  );
+}

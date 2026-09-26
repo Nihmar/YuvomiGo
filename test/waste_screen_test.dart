@@ -28,6 +28,17 @@ final class FakeWasteRepository extends WasteRepository {
         ),
       );
 
+  final List<WastePickup> pickups = [
+    WastePickup(
+      id: 1,
+      typeId: 1,
+      date: _dateKey(DateTime.now()),
+      note: 'straordinaria',
+    ),
+  ];
+  final List<int> created = [];
+  int _nextId = 100;
+
   @override
   Future<List<WasteNextPickup>> fetchNextPickups() async {
     final now = DateTime.now();
@@ -42,6 +53,55 @@ final class FakeWasteRepository extends WasteRepository {
       ),
       const WasteNextPickup(typeId: 3, typeName: 'Vetro'),
     ];
+  }
+
+  @override
+  Future<List<WasteType>> fetchTypes() async => const [
+    WasteType(id: 1, name: 'Carta', color: '#2196F3'),
+    WasteType(id: 2, name: 'Plastica', color: '#FFEB3B'),
+    WasteType(id: 3, name: 'Vetro'),
+  ];
+
+  @override
+  Future<List<WastePickup>> fetchPickups() async => pickups.toList();
+
+  @override
+  Future<WastePickup> createPickup({
+    required int typeId,
+    required String date,
+    String? note,
+  }) async {
+    created.add(typeId);
+    final pickup = WastePickup(
+      id: _nextId++,
+      typeId: typeId,
+      date: date,
+      note: note,
+    );
+    pickups.add(pickup);
+    return pickup;
+  }
+
+  @override
+  Future<WastePickup> updatePickup(
+    int id, {
+    required String date,
+    String? note,
+  }) async {
+    final index = pickups.indexWhere((p) => p.id == id);
+    final updated = WastePickup(
+      id: id,
+      typeId: pickups[index].typeId,
+      date: date,
+      note: note,
+    );
+    pickups[index] = updated;
+    return updated;
+  }
+
+  @override
+  Future<void> deletePickup(int id) async {
+    pickups.removeWhere((p) => p.id == id);
   }
 }
 
@@ -70,5 +130,44 @@ void main() {
     expect(find.textContaining('domani'), findsOneWidget);
     expect(find.textContaining('non pianificata'), findsOneWidget);
     expect(find.text('spostato'), findsOneWidget);
+  });
+
+  testWidgets('Extra pickups are listed, created and deleted', (tester) async {
+    final repo = FakeWasteRepository();
+    await tester.pumpWidget(_pump(repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Extra'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('straordinaria'), findsOneWidget);
+
+    // Aggiungi una raccolta.
+    await tester.tap(find.byTooltip('Aggiungi raccolta'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(DropdownButtonFormField<int>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Vetro').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find
+          .descendant(
+            of: find.byType(AlertDialog),
+            matching: find.byType(TextField),
+          )
+          .first,
+      'vetro extra',
+    );
+    await tester.tap(find.text('Salva'));
+    await tester.pumpAndSettle();
+
+    expect(repo.created, [3]);
+    expect(find.textContaining('vetro extra'), findsOneWidget);
+
+    // Elimina la raccolta appena creata.
+    await tester.tap(find.byTooltip('Elimina').last);
+    await tester.pumpAndSettle();
+
+    expect(repo.pickups, hasLength(1));
   });
 }
