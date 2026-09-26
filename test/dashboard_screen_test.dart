@@ -68,6 +68,31 @@ void main() {
     expect(find.textContaining('Latte (2)'), findsOneWidget);
     // Note
     expect(find.text('WIFI'), findsOneWidget);
+    // Spesa: una sola lista con articoli aperti → niente conteggio liste.
+    expect(find.text('2 articoli'), findsOneWidget);
+  });
+
+  testWidgets('Shopping badge shows the list count when more than one', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(
+            () => FakeAuthController(Authenticated(user: fakeUser())),
+          ),
+          dashboardProvider.overrideWithValue(
+            const AsyncData(
+              DashboardData(shoppingOpenCount: 5, shoppingOpenLists: 3),
+            ),
+          ),
+        ],
+        child: const MaterialApp(home: DashboardScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('5 articoli · 3 liste'), findsOneWidget);
   });
 
   testWidgets('Dashboard shows empty state when there is no data', (

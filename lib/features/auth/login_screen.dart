@@ -186,7 +186,9 @@ final class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ? 'Inserisci la password.'
                           : null,
                       textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _submitCredentials(),
+                      onFieldSubmitted: (_) {
+                        if (!_submitting) _submitCredentials();
+                      },
                     ),
                     const SizedBox(height: 24),
                     FilledButton.icon(
@@ -215,7 +217,9 @@ final class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _submit2FA(),
+                      onFieldSubmitted: (_) {
+                        if (!_submitting) _submit2FA();
+                      },
                     ),
                     const SizedBox(height: 24),
                     FilledButton.icon(

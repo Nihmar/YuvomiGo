@@ -328,7 +328,7 @@ final class _ShoppingTile extends StatelessWidget {
               icon: Icons.shopping_cart,
               title: 'Spesa',
               trailing: data.shoppingOpenCount != null
-                  ? _Badge(label: '${data.shoppingOpenCount} articoli')
+                  ? _Badge(label: _badgeLabel(data))
                   : null,
             ),
             const SizedBox(height: 12),
@@ -345,6 +345,14 @@ final class _ShoppingTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// "2 articoli" (una lista sola) oppure "2 articoli · 3 liste".
+  String _badgeLabel(DashboardData data) {
+    final articles = data.shoppingOpenCount!;
+    final lists = data.shoppingOpenLists;
+    if (lists <= 1) return '$articles articoli';
+    return '$articles articoli · $lists liste';
   }
 
   Widget _shoppingListRow(BuildContext context, DashShoppingList list) {
