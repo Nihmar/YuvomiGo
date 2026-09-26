@@ -167,7 +167,8 @@ Test: 130 verdi, `flutter analyze` pulito.
         confronto col mese precedente e grafico dell'anno (`/budget/stats`); valuta dalle preferenze;
         **movimenti in scrittura**: crea/modifica (entrata o uscita, categoria, data), elimina e
         conferma quelli in attesa
-  - [x] **Ricette** (sola lettura): elenco con ricerca, dettaglio con ingredienti/note/fonte
+  - [x] **Ricette**: elenco con ricerca, dettaglio con ingredienti/note/fonte; **creazione, modifica ed
+        eliminazione** delle ricette native (le importate dai provider restano read-only)
   - [x] **Inventario**: oggetti con ricerca, categoria/posizione, prezzo/garanzia e date tracciate;
         creazione, modifica (PUT completo) ed eliminazione con conferma
   - [x] **Dispensa**: scorte con quantità/unità, posizione, scadenza e scorta minima; creazione ed eliminazione
